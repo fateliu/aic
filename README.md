@@ -1,68 +1,74 @@
-# 一页创作
+# 漫想工坊
 
-校园活动创作 Agent 原型。根据本地《AIC 多模态内容生成平台组内讨论稿》，先验证“活动资料 → 文案与分镜 → 人工确认 → 导出”的小闭环。
+文字、图片创意、漫画分格与动画分镜的创作工作台。提示词子 Agent 先补全细节，用户检查后再由主创 Agent 组织作品。原项目名为“一页创作”，旧版活动项目仍可打开、编辑和导出。
 
-## 本地运行
+当前是创作前期原型：能输出文字、精细提示词与脚本。**没有接入图像或视频渲染，不会将脚本冒充已经生成的图片、漫画或动画。**
 
-需要 Node.js 22 或更高版本，无需安装第三方依赖。
+## 启动
+
+需要 Node.js 22+，无需安装第三方依赖。在项目目录运行：
 
 ```powershell
-cd E:\aic\repo
 npm start
 ```
 
-打开 http://127.0.0.1:3000 。点击“填入示例”，再创建项目。默认使用规则模板，可以直接体验完整流程，不消耗模型费用。
+打开 http://127.0.0.1:3000 。无需密钥即可用规则演示：选择类型 → 填入示例 → 优化提示词 → 检查/修改并确认提示词 → 主 Agent 创作 → 确认草稿 → 导出 TXT / JSON。
+
+## 连接 DeepSeek
+
+1. 在 DeepSeek 开放平台准备 API Key。聊天网站账号或会员不等于已开通 API。
+2. 如果还没有 `.env`，复制 `.env.example` 为 `.env`。
+3. 只在本机 `.env` 填写 `DEEPSEEK_API_KEY`，不要在聊天、前端源码或 GitHub 中填写密钥。
+4. 保留默认官方地址，按账户可用模型设置 `DEEPSEEK_MODEL`，然后重启 `npm start`。
+
+```dotenv
+DEEPSEEK_API_KEY=在本机填写你的密钥
+DEEPSEEK_MODEL=deepseek-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+默认模型名依据开发时官方示例，模型可用性以账户为准。密钥仅由后端读取；配置接口只返回是否已配置。模型模式按你的账户计费，规则演示不调用模型。一次提示词优化最多 2 次模型请求，一次主创最多 6 轮，每阶段整体超时 120 秒；失败不会自动切换成模板或无限重试。
+
+接口参考：[DeepSeek JSON Output](https://api-docs.deepseek.com/zh-cn/guides/json_mode/) 与 [Tool Calls](https://api-docs.deepseek.com/zh-cn/guides/tool_calls/)。当前使用非流式、非思考模式；主 Agent 支持 tool_call_id 的工具结果回传。
+
+也可在 `.env` 配置 `OLLAMA_MODEL`、`OLLAMA_BASE_URL`，使用支持工具调用的本地模型。
+
+## 主 Agent 与子 Agent
+
+提示词子 Agent 使用独立上下文和 JSON 输出，整理完整提示词、角色锚点、限制条件、补充建议及待确认问题。它没有执行工具或访问其他项目的权限。用户可以在界面编辑后保存。
+
+主创 Agent 只接收当前项目、确认后的提示词和所选 Skill。它通过 `save_creative`、`review_creative` 提交和检查草稿。文字模式输出正文与一个提纲单元；图片模式输出一个图像提示词；漫画模式输出四格；动画模式输出三个五秒镜头。
+
+程序检查字段、数量及长度，不能替代语义审核。修改提示词会清空旧草稿并撤销确认；修改草稿会撤销作品确认；版本号避免误操作过期内容。规则演示只模拟这些阶段，不具备模型推理能力。
+
+## 创作 Skill 扩展
+
+内置漫画角色与分格、动画镜头设计、画面构图三个指令包。漫画包参考 MIT 开源的 baoyu-comic，保留来源和许可，是本项目适配版，不是完整上游插件。
+
+添加方法见 [Skill 来源与扩展](creative-skills/SOURCES.md)。将自包含的 `SKILL.md` 放入 `creative-skills/` 并在 `registry.json` 注册，刷新页面后可选择。只读取白名单 Markdown，不自动下载、执行脚本或安装依赖。每个项目保留所用 Skill 内容及 SHA256 快照。
+
+## 动漫背景
+
+点击页面右上角“背景设置”，可选择本机图片临时预览并调整可见度，不上传文件。
+
+永久配置：将有权使用的图片放到 `public/assets/background.webp`，把 `public/theme.json` 的 `backgroundImage` 改为 `/assets/background.webp`，刷新即可。支持 PNG、JPEG、WebP、AVIF，透明度可设为 0～0.65。详见 [背景配置](public/assets/README.md)。
+
+## 媒体服务扩展接口
+
+确认草稿后，可导出媒体任务说明。`POST /api/projects/:id/media-request` 返回 `not_connected` 和规范化请求：项目版本、类型、画幅、角色锚点、限制条件及逐格/逐镜头提示词。**它目前不会提交真实生成任务或收费。**
+
+后续图片/视频适配器可消费这个结构；正式接入时还需实现报价确认、任务持久化、幂等提交、轮询、素材存储与失败恢复。DeepSeek 在本项目中负责文字和规划，图像/视频服务另接。
+
+## 验证与运行边界
 
 ```powershell
 npm test
 ```
 
-## 当前功能
+12 项自动测试覆盖旧流程、新类型、子 Agent 输出校验、DeepSeek 模拟请求及工具消息、Skill 白名单、确认门禁、版本失效与媒体说明接口。浏览器验证了四格漫画流程、保存找回、背景预览及手机布局。**没有使用真实 API Key 联调 DeepSeek；真实输出质量和账户连通性待配置后验证。**
 
-- 检查活动名称、时间、地点、受众、报名方式及风格；缺失时要求补充。
-- 生成并编辑宣传标题、正文和两个各 5 秒的分镜。
-- 保存项目和执行记录，刷新后可从“最近的创作”重新打开。
-- 人工确认当前版本后，下载 TXT 文案、SVG 海报和含分镜的 JSON 项目文件。
-- 重新编辑或生成后，原确认失效；旧版本不能被误确认；重复生成请求被拒绝。
-- 本地 Ollama 适配器支持模型选择工具、接收检查结果并修正草稿，最多 6 轮、整体请求超时 120 秒。
+数据保存在忽略 Git 的 `data/`，`.env` 同样忽略。`PORT` 和 `DATA_DIR` 可修改。服务仅监听 `127.0.0.1`，面向单机单进程，没有登录、多人权限或任务队列，不适合直接开放公网。
 
-## 两种模式的区别
+目录：`lib/studio.mjs` 主子 Agent；`lib/providers.mjs` 模型适配；`lib/skills.mjs` Skill 加载；`server.mjs` API；`public/` 界面；`creative-skills/` 扩展包；`test/` 测试。
 
-| 模式 | 实际行为 | 前提 |
-| --- | --- | --- |
-| 规则演示 | 固定模板填写内容，使用固定工作流；不具备自主推理 | 无需密钥或模型 |
-| 本地模型 | 模型调用 `save_creative` 和 `review_creative`，根据工具结果修正，再交给人工确认 | 自行安装 Ollama，并准备支持工具调用的模型 |
-
-规则演示不冒充真实 Agent 推理。海报使用 SVG 程序排版，并非 AI 图像生成；视频只有分镜计划，没有生成片段或 MP4。结构审核只检查字段与长度，不能保证模型没有编造语义事实，必须人工核对。
-
-## 连接本地模型
-
-先启动 Ollama，确认已有支持工具调用的模型，再在启动服务的 PowerShell 中设置：
-
-```powershell
-$env:OLLAMA_MODEL = '替换为你已安装的模型名'
-$env:OLLAMA_BASE_URL = 'http://127.0.0.1:11434'
-npm start
-```
-
-回到页面，选择“本地模型”。未配置模型名时，该选项不可用；模型失败会明确报错，不静默换成模板。接口依据 [Ollama Chat API](https://docs.ollama.com/api/chat)；服务使用 `stream: false` 和工具调用。具体模型的中文创作及工具调用能力需要实测。
-
-不需要为了运行演示模式安装 Ollama。没有在这次开发中下载模型或产生付费调用，真实模型服务尚未联调；自动测试使用模拟响应验证工具循环。
-
-## 代码结构
-
-```text
-server.mjs          本地 HTTP 服务、确认门禁、接口
-lib/agent.mjs       输入检查、模型工具循环、模板、海报排版
-lib/store.mjs       JSON 文件持久化与原子替换
-public/            中文工作台
-test/              Agent 与 HTTP 集成测试
-docs/              原型范围、后续开发计划
-data/              运行后生成，已从 Git 忽略
-```
-
-项目数据默认写入 `data/`；可用 `DATA_DIR` 更改位置，`PORT` 更改端口。服务仅监听 `127.0.0.1`，面向单机单进程使用，没有登录与多人权限控制。不要把当前版本直接暴露到公网。输入信息修改后应创建新项目；已有项目可编辑创意文案与分镜。
-
-原文稿建议 React + TypeScript、FastAPI 和 SQLite。为了先验证交互和 Agent 闭环，这个版本使用零依赖 Node.js 与原生浏览器界面；尚未实现文稿中完整的多模态平台。
-
-下一步开发顺序和验收条件见 [原型方案](docs/agent-prototype.md)。
+架构和后续开发范围见 [原型方案](docs/agent-prototype.md)。

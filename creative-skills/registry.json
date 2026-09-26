@@ -1,0 +1,5 @@
+[
+  {"id":"comic-continuity","name":"漫画角色与分格","description":"锁定角色特征，拆分四格叙事，区分画面和对白。","kinds":["comic"],"enabled":true,"path":"comic-continuity/SKILL.md","source":"https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-comic","license":"MIT","origin":"baoyu-comic 思路适配，并非完整原版"},
+  {"id":"animation-shots","name":"动画镜头设计","description":"把动作拆成起始、变化与结束，保持镜头间连续。","kinds":["animation"],"enabled":true,"path":"animation-shots/SKILL.md","source":null,"license":"Project-local","origin":"项目内置"},
+  {"id":"visual-composition","name":"画面构图","description":"补全主体、景别、光线与留白，保留原始设定。","kinds":["image","comic","animation"],"enabled":true,"path":"visual-composition/SKILL.md","source":null,"license":"Project-local","origin":"项目内置"}
+]
