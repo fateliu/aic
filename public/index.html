@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一页创作 · 校园活动创作 Agent</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+  <header><a class="brand" href="/">一页<span>创作</span><small>校园活动工作台</small></a><span class="badge">AGENT PROTOTYPE / 01</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">从一个活动，到一份完整创意</p><h1>让下一次相聚，<br>从这里开始。</h1></div><p>整理活动资料，打磨文案与分镜。<br>确认每个细节，再带走你的宣传作品。</p></section>
+    <div id="notice" class="notice" role="status" aria-live="polite">规则演示模式无需密钥。海报由程序排版，视频目前仅提供分镜。</div>
+    <div class="workspace">
+      <aside><section class="panel"><div class="section-title"><h2>01 / 活动资料</h2><button id="example" class="text-button" type="button">填入示例</button></div>
+        <form id="brief-form">
+          <label>活动名称<input name="name" maxlength="40" required placeholder="例如：秋日社团见面会"></label>
+          <div class="two-col"><label>活动时间<input name="time" maxlength="60" required placeholder="10 月 3 日 14:00"></label><label>活动地点<input name="location" maxlength="60" required placeholder="学生活动中心"></label></div>
+          <label>面向谁<input name="audience" maxlength="60" required placeholder="例如：想认识新朋友的大一同学"></label>
+          <label>报名方式<input name="signup" maxlength="100" required placeholder="例如：联系社团负责人报名"></label>
+          <label>创作风格<select name="style"><option>清新自然</option><option>活力明快</option><option>简洁克制</option><option>温暖亲切</option></select></label>
+          <label>运行模式<select id="mode" name="mode"><option value="demo">规则演示 · 不调用模型</option><option value="ollama" disabled>本地模型 · 尚未配置</option></select></label>
+          <button class="primary" id="create" type="submit">创建项目并生成草稿 <span>↗</span></button>
+        </form>
+      </section><section class="panel history"><h2>最近的创作</h2><div id="history"><p class="muted">还没有项目。</p></div></section></aside>
+      <section class="panel output">
+        <div class="section-title"><h2>02 / 创作草稿</h2><span id="status" class="pill">等待开始</span></div>
+        <div id="empty"><div class="empty-symbol">页</div><h3>下一份好创意，还差一个开始</h3><p>填入活动信息，或用示例试一遍。<br>这里会出现可编辑的文案和两个短视频分镜。</p><div class="steps"><span>整理资料</span><i>→</i><span>创作与检查</span><i>→</i><span>人工确认</span></div></div>
+        <div id="result" hidden>
+          <p id="provenance" class="muted"></p><p id="facts" class="facts"></p>
+          <form id="creative-form">
+            <label>创意标题<input name="headline" maxlength="30" required></label>
+            <label>宣传正文<textarea name="intro" rows="5" maxlength="500" required></textarea></label>
+            <div class="section-title storyboard-title"><h3>短视频分镜</h3><span class="muted">2 个镜头 · 共 10 秒 · 尚未生成视频</span></div>
+            <div class="shots">
+              <article><div class="shot-index">镜头 01 <span>5 SEC</span></div><label>画面描述<textarea name="visual0" rows="4" maxlength="240" required></textarea></label><label>旁白<input name="narration0" maxlength="100" required></label></article>
+              <article><div class="shot-index">镜头 02 <span>5 SEC</span></div><label>画面描述<textarea name="visual1" rows="4" maxlength="240" required></textarea></label><label>旁白<input name="narration1" maxlength="100" required></label></article>
+            </div>
+            <div class="actions"><button type="submit" class="secondary" id="save">保存修改</button><button type="button" class="secondary" id="regenerate">重新生成草稿</button></div>
+          </form>
+          <div class="approval"><label class="check"><input type="checkbox" id="checked">我已核对文案、活动信息和分镜，确认可以导出。</label><button id="approve" class="primary" disabled>确认当前版本</button></div>
+          <div id="downloads" hidden><h3>03 / 带走你的作品</h3><div class="download-links"><a id="download-copy">下载文案 TXT ↗</a><a id="download-poster">下载海报 SVG ↗</a><a id="download-project">下载项目 JSON ↗</a></div><p class="muted">海报为程序排版，可用浏览器打开；项目文件包含分镜和执行记录。</p></div>
+        </div>
+        <div id="retry-box" hidden><p>生成没有完成，项目资料已保存。</p><button id="retry" class="secondary">重试生成</button></div>
+        <details id="trace-box" hidden><summary>查看 Agent 执行记录</summary><ol id="trace"></ol></details>
+      </section>
+    </div>
+    <footer><span>一页创作 / AIC 探索原型</span><span>每份创意，都由你作最后决定。</span></footer>
+  </main><script src="/app.js" type="module"></script>
+</body></html>
