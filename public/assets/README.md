@@ -1,5 +1,9 @@
 # 自定义动漫背景
 
+当前两张主视觉为用户提供的 P3R 角色图版：hero-sky.png 与 hero-flare.png，源文件没有改写，页面通过 CSS 裁切与调色。来源状态见 docs/qa/asset-register.md，不属于本项目原创人物插画。
+
+public/theme.json 的 palette 可设 sky / flare；heroSkyImage、heroFlareImage 分别指定两种主题的主视觉。已有浏览器配色偏好优先于默认 palette。当前 CSS 适配左右双栏图版的右侧大头像，换成单人像时还需调整 .hero-character 的裁切。
+
 把你有权使用的图片放在此目录，例如 `background.webp`。文件名使用英文字母、数字、连字符或下划线，支持 png、jpg、jpeg、webp、avif。
 
 修改 public/theme.json 的 backgroundImage 为 `/assets/background.webp`。backgroundOpacity 是 0 到 0.65 的数字；backgroundPosition 可设为 `center`、`top` 或 `bottom`。刷新页面生效。

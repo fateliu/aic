@@ -1,4 +1,7 @@
 {
+  "palette": "sky",
+  "heroSkyImage": "/assets/hero-sky.png",
+  "heroFlareImage": "/assets/hero-flare.png",
   "backgroundImage": null,
   "backgroundOpacity": 0.28,
   "backgroundPosition": "center"

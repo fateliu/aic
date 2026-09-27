@@ -1,30 +1,89 @@
 <!doctype html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>漫想工坊 · 文字与视觉创作</title><link rel="stylesheet" href="/style.css"></head>
+<html lang="zh-CN" data-palette="sky">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
+  <title>漫想工坊 · 让想象自由发生</title><link rel="stylesheet" href="/style.css">
+</head>
 <body>
+<a class="skip-link" href="#brief-form">跳到创作表单</a>
 <div id="background-layer" aria-hidden="true"></div>
-<header class="topbar"><a class="brand" href="/"><span class="brand-icon">M✧</span><span>漫想工坊<small>MANXIANG STUDIO</small></span></a><div class="header-right"><span id="provider-badge" class="tag">规则演示</span><button id="background-open" class="secondary">◈ 背景设置</button></div></header>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="漫想工坊首页"><span class="brand-icon" aria-hidden="true">m<span>↗</span></span><span>漫想工坊<small>MANXIANG / CREATIVE STUDIO</small></span></a>
+  <div class="header-right">
+    <span id="provider-badge" class="engine-badge">规则演示</span>
+    <div class="palette-switch" role="group" aria-label="界面配色">
+      <button type="button" data-palette-option="sky" aria-pressed="true"><i class="swatch sky"></i>晴空<span>BLUE</span></button>
+      <button type="button" data-palette-option="flare" aria-pressed="false"><i class="swatch flare"></i>赤日<span>RED</span></button>
+    </div>
+    <button id="background-open" class="background-button" title="使用自己的图片装饰工作台">背景 <span aria-hidden="true">↗</span></button>
+  </div>
+</header>
 <div class="app-shell">
-<aside class="sidebar"><button id="new-project" class="new-project">＋ 新的灵感</button><div class="nav-label">你的创作 / LIBRARY</div><div id="history"><p class="muted">这里会保存你的创作。</p></div><div class="sidebar-note"><span>✧</span><p>灵感交给你<br>细节交给 Agent</p><small>文字 · 图片 · 漫画 · 动画</small></div></aside>
-<main>
-<section class="intro"><div><p class="eyebrow">YOUR IMAGINATION, FRAME BY FRAME</p><h1>把脑海里的画面，<em>写成下一帧。</em></h1><p>从一句想法开始，让创作助手补全细节，再由你决定故事的方向。</p></div><span class="edition">CREATIVE<br>WORKSPACE <b>02</b></span></section>
-<div class="mode-tabs" role="group" aria-label="创作类型"><button data-kind="text" aria-pressed="false"><span>文</span>文字创作<small>STORY</small></button><button data-kind="image" aria-pressed="false"><span>▧</span>图片创意<small>IMAGE</small></button><button data-kind="comic" aria-pressed="true" class="active"><span>▦</span>漫画分格<small>COMIC</small></button><button data-kind="animation" aria-pressed="false"><span>▷</span>动画分镜<small>MOTION</small></button></div>
-<div id="notice" role="status" aria-live="polite">先试一个想法。当前生成提示词与脚本，图片和动画渲染尚未接入。</div>
-<div class="workspace">
-<div class="composer-column">
-<section class="panel"><div class="section-title"><h2><span class="step">01</span> 写下你的灵感</h2><button id="example" class="text-button">试试示例 ↗</button></div>
-<form id="brief-form"><label>这次想创作什么？<textarea name="prompt" rows="7" maxlength="3000" required placeholder="一只住在云端的猫，第一次收到来自地面的信。想画成温暖的四格漫画……"></textarea></label><label>项目名称 <span class="optional">选填</span><input name="name" maxlength="60" placeholder="给这个灵感起个名字"></label><div class="two-col"><label>视觉风格<select name="style"><option>日系动画</option><option>温暖水彩</option><option>黑白漫画</option><option>电影质感</option><option>清新插画</option><option>简洁叙事</option></select></label><label>画面比例<select name="ratio"><option value="16:9">16:9 · 横屏</option><option value="9:16">9:16 · 竖屏</option><option value="1:1">1:1 · 方形</option></select></label></div><label>创作引擎<select id="mode" name="mode"><option value="demo">规则演示 · 免费试流程</option><option value="deepseek" disabled>DeepSeek · 待配置密钥</option><option value="ollama" disabled>Ollama · 待配置</option></select></label><p id="engine-help" class="muted">演示模式使用模板，不调用大模型。</p><button class="primary" id="create" type="submit"><span>让提示词更精准</span><span>✦</span></button></form>
-</section>
-<section class="panel skills-panel"><div class="section-title"><h2>创作 Skills</h2><span class="tag">可扩展</span></div><p class="muted">为这次创作选择额外的方法与约束。</p><div id="skills"></div><details><summary>如何添加更多 Skill</summary><p class="muted">将审阅过的 SKILL.md 放入 creative-skills，在 registry.json 注册。支持本地文字指令包，不自动执行外部脚本。</p></details></section>
+  <aside class="sidebar" aria-label="项目记录">
+    <div class="rail-heading"><span>YOUR SPACE</span><b>01 /</b></div>
+    <button id="new-project" class="new-project"><span>＋ 新的灵感</span><span aria-hidden="true">↗</span></button>
+    <div class="nav-label"><span>创作档案</span><small>ARCHIVE</small></div>
+    <div id="history"><p class="muted">灵感会在这里留下记录。</p></div>
+    <div class="sidebar-note" aria-hidden="true"><div class="orbit-stamp"><span>MAKE<br>SOMETHING<br>YOURS.</span><b>✳</b></div><p>不必等灵感落地。<br>现在，就让它起飞。</p><div class="rail-stripes"></div><small>IMAGINATION IN MOTION / MX</small></div>
+  </aside>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-grid" aria-hidden="true"></div><div class="hero-slash" aria-hidden="true"></div>
+      <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> A CLEAR MIND. AN OPEN SKY.</p><h1 id="hero-title">让想象，<br><em>自由发生。</em><span aria-hidden="true">↗</span></h1><p class="hero-description">一句想法，一整个世界。<br>文字、画面与故事，从这里出发。</p><div class="hero-caption"><span>IDEA → STORY → FRAME</span><b>CREATE YOUR NEXT SCENE.</b></div></div>
+      <div class="sky-art" aria-hidden="true">
+        <div class="character-window"><img class="hero-character character-sky" src="/assets/hero-sky.png" alt="" fetchpriority="high"><img class="hero-character character-flare" src="/assets/hero-flare.png" alt="" loading="lazy"></div>
+        <span class="character-label">THE NEXT CHAPTER<br>BEGINS WITH YOU.</span>
+        <span class="art-word">FLY<br>HIGH.</span>
+      </div>
+      <button id="scene-shuffle" type="button" class="scene-shuffle" aria-label="随机变换装饰构图" title="换一个灵感构图">↻ <span>ANOTHER SKY</span></button>
+      <span class="hero-corner" aria-hidden="true">MX—03 / <span id="palette-label">SKY EDITION</span></span>
+    </section>
+    <section class="creation-nav" aria-label="新项目类型">
+      <div class="nav-caption"><b>选择你的表达</b><span>CHOOSE A FORMAT</span></div>
+      <div class="mode-tabs" role="group" aria-label="创作类型">
+        <button data-kind="text" aria-pressed="false"><span class="mode-number">01</span><span class="mode-name">文字创作<small>STORY</small></span><span class="mode-arrow">↗</span></button>
+        <button data-kind="image" aria-pressed="false"><span class="mode-number">02</span><span class="mode-name">图片创作<small>IMAGE</small></span><span class="mode-arrow">↗</span></button>
+        <button data-kind="comic" aria-pressed="true" class="active"><span class="mode-number">03</span><span class="mode-name">漫画分格<small>COMIC</small></span><span class="mode-arrow">↗</span></button>
+        <button data-kind="animation" aria-pressed="false"><span class="mode-number">04</span><span class="mode-name">动画分镜<small>MOTION</small></span><span class="mode-arrow">↗</span></button>
+      </div>
+    </section>
+    <div id="notice" role="status" aria-live="polite">准备好了吗？写下想法，和创作助手一起把它变成下一帧。</div>
+    <div class="workspace">
+      <div class="composer-column">
+        <section class="panel composer-panel"><div class="section-title"><h2><span class="step">01</span> 灵感起点</h2><button id="example" class="text-button">试试示例 ↗</button></div>
+          <form id="brief-form">
+            <label>脑海里，正在发生什么？<textarea name="prompt" rows="6" maxlength="3000" required placeholder="一只住在云端的猫，第一次收到来自地面的信。想画成温暖的四格漫画……"></textarea></label>
+            <label>为这个灵感命名 <span class="optional">选填</span><input name="name" maxlength="60" placeholder="比如：云端来信"></label>
+            <div class="two-col"><label>视觉风格<select name="style"><option>日系动画</option><option>温暖水彩</option><option>黑白漫画</option><option>电影质感</option><option>清新插画</option><option>简洁叙事</option></select></label><label>画面比例<select name="ratio"><option value="16:9">16:9 · 横屏</option><option value="9:16">9:16 · 竖屏</option><option value="1:1">1:1 · 方形</option></select></label></div>
+            <label>创作引擎<select id="mode" name="mode"><option value="demo">规则演示 · 免费试流程</option><option value="deepseek" disabled>DeepSeek · 待配置密钥</option><option value="ollama" disabled>Ollama · 待配置</option></select></label>
+            <p id="engine-help" class="muted">演示模式使用模板，不调用大模型。</p>
+            <button class="primary" id="create" type="submit">让提示词更精准 ↗</button>
+          </form>
+          <p id="image-engine-status" class="engine-note">正在检查图片引擎…</p>
+        </section>
+        <section class="panel skills-panel"><div class="section-title"><h2>给灵感，多一点方法</h2><span class="tag">SKILLS</span></div><p class="muted">选择这次创作要带上的小帮手。</p><div id="skills"></div><details><summary>扩展创作 Skill</summary><p class="muted">将审阅过的 SKILL.md 放入 creative-skills，在 registry.json 注册。支持本地文字指令包。</p></details></section>
+      </div>
+      <div class="result-column">
+        <section class="agent-strip" aria-label="创作流程"><div><span class="agent-avatar">P</span><p>提示词子 Agent<small>细化你的设定</small></p></div><span class="connector">↗</span><div><span class="agent-avatar director">D</span><p>主创 Agent<small>编排你的故事</small></p></div><span class="connector">↗</span><div><span class="agent-avatar human">你</span><p>最后一笔，交给你<small>修改 · 确认 · 导出</small></p></div></section>
+        <section class="panel canvas"><div class="section-title"><h2><span class="step">02</span> 下一帧，创作现场</h2><span id="status" class="tag">等待灵感</span></div>
+          <div id="empty"><div class="empty-art" aria-hidden="true"><span class="empty-orbit"></span><span class="empty-spark">✳</span><b>YOUR<br>NEXT<br><em>SCENE.</em></b><span class="empty-arrow">↗</span><span class="empty-label">STORY NO. 001 / STILL UNWRITTEN</span></div><h3>好故事，从一个小念头开始。</h3><p>在左侧写下想法，或者试试示例。<br>一起把还没说清的灵感，变成看得见的故事。</p><div class="empty-tags"><span>细化设定</span><i>→</i><span>编排故事</span><i>→</i><span>画面成真</span></div></div>
+          <div id="project-view" hidden>
+            <div class="project-heading"><div><p class="project-kicker">NOW CREATING / <span id="project-kind"></span></p><h3 id="project-title"></h3></div><span id="project-version" class="project-version"></span></div>
+            <nav class="project-jumps" aria-label="当前项目阶段"><a id="jump-prompt" href="#refinement-section">01 <span>提示词设定</span> ↗</a><a id="jump-draft" href="#result">02 <span>创作稿</span> ↗</a><a id="jump-media" href="#image-section">03 <span id="jump-media-label">图片生成</span> ↗</a></nav>
+            <p id="provenance" class="muted"></p><details class="original"><summary>原始输入与创作设置</summary><p id="facts"></p></details>
+            <section id="refinement-section" hidden><div class="subheading"><h3>提示词子 Agent 的建议</h3><span class="tag accent">可编辑</span></div><form id="refinement-form"><label>优化后的完整提示词<textarea name="refinedPrompt" rows="7" maxlength="6000" required></textarea></label><details open><summary>角色与限制条件</summary><label>固定角色特征<textarea name="characterAnchor" rows="2" maxlength="1500"></textarea></label><label>避免出现的内容<textarea name="negativePrompt" rows="2" maxlength="1500"></textarea></label></details><div class="suggestions"><div><h4>补充建议</h4><ul id="assumptions"></ul></div><div><h4>待确认问题</h4><ul id="questions"></ul></div></div><div class="actions"><button id="save-prompt" class="secondary" type="submit">保存提示词修改</button><button id="refine-again" class="text-button" type="button">重新优化</button></div></form><div class="approval"><label class="check"><input type="checkbox" id="prompt-checked">我已检查补充设定，使用当前提示词创作。</label><button id="generate" class="primary" disabled>交给主创 Agent ↗</button></div></section>
+            <section id="result" hidden><div class="subheading"><h3 id="result-title">创作草稿</h3><span class="tag">YOUR FINAL TOUCH</span></div><form id="creative-form"><label>作品标题<input name="headline" maxlength="60" required></label><label>正文 / 故事梗概<textarea name="intro" rows="5" maxlength="3000" required></textarea></label><div id="shots" class="shots"></div><div class="actions"><button type="submit" class="secondary" id="save">保存草稿修改</button></div></form><div class="approval"><label class="check"><input type="checkbox" id="checked">我已检查内容与设定，确认当前版本。</label><button id="approve" class="primary" disabled>确认作品草稿 ↗</button></div><div id="downloads" hidden><h3>带走这份灵感</h3><div class="download-links"><a id="download-copy">创作稿 TXT ↗</a><a id="download-project">完整项目 JSON ↗</a><a id="download-poster" hidden>旧版海报 SVG ↗</a><button id="media-request" class="secondary">媒体任务说明</button></div><p class="muted">实际生成的图片可在下方下载。动画当前提供分镜脚本。</p></div></section>
+<section id="image-section" hidden><div class="subheading"><h3><span class="step">03</span> 让画面真正出现</h3><span class="tag accent">万相生图</span></div><p id="image-hint" class="muted"></p><label>选择要生成的画面<select id="image-unit"></select></label><label class="check" id="image-reference-label"><input id="image-reference" type="checkbox" checked>使用已生成的第一格作为角色参考图。</label><label class="check"><input id="image-cost" type="checkbox"><span id="image-cost-label">确认本次生成 1 张图片，可能产生百炼 API 费用。</span></label><button id="image-submit" class="primary" disabled>生成这张图片 ↗</button><div id="image-gallery" aria-live="polite"></div><button id="comic-export" class="secondary" hidden disabled>四格齐全后下载漫画 PNG</button><p class="muted">图片保存到本地。修改画稿后，旧图片会保留并标注版本。</p></section>
+          </div>
+          <div id="retry-box" hidden><p>这一步没有完成，已有资料已保存。</p><button id="retry" class="secondary">重试这一步 ↗</button></div>
+          <details id="trace-box" hidden><summary>Agent 执行记录与 Skill 来源</summary><div id="used-skills"></div><ol id="trace"></ol></details>
+        </section>
+      </div>
+    </div>
+    <footer><strong>KEEP YOUR IMAGINATION IN MOTION. <span>↗</span></strong><span>漫想工坊 / 每一帧，由你决定。</span></footer>
+  </main>
 </div>
-<div class="result-column">
-<section class="agent-strip" aria-label="创作流程"><div><span class="agent-avatar">P</span><p>提示词子 Agent<small>细化设定与镜头</small></p></div><span class="connector">→</span><div><span class="agent-avatar director">D</span><p>主创 Agent<small>编排文案与分镜</small></p></div><span class="connector">→</span><div><span class="agent-avatar human">你</span><p>最终决定<small>修改 · 确认 · 导出</small></p></div></section>
-<section class="panel canvas"><div class="section-title"><h2><span class="step">02</span> 创作空间</h2><span id="status" class="tag">等待灵感</span></div>
-<div id="empty"><div class="empty-mark" aria-hidden="true">✧</div><p class="eyebrow">A LITTLE IDEA, A WHOLE NEW WORLD</p><h3>故事还没有开始，<br>想象已经在路上。</h3><p>先把想法写在左侧。<br>提示词助手会整理细节，你可以修改后再开始创作。</p><div class="empty-tags"><span>角色一致性</span><span>分格叙事</span><span>镜头语言</span></div></div>
-<div id="project-view" hidden><p id="provenance" class="muted"></p><details class="original"><summary>原始输入与创作设置</summary><p id="facts"></p></details>
-<section id="refinement-section" hidden><div class="subheading"><h3>✦ 提示词子 Agent 的建议</h3><span class="tag accent">可编辑</span></div><form id="refinement-form"><label>优化后的完整提示词<textarea name="refinedPrompt" rows="7" maxlength="6000" required></textarea></label><details open><summary>角色与限制条件</summary><label>固定角色特征<textarea name="characterAnchor" rows="2" maxlength="1500"></textarea></label><label>避免出现的内容<textarea name="negativePrompt" rows="2" maxlength="1500"></textarea></label></details><div class="suggestions"><div><h4>补充建议</h4><ul id="assumptions"></ul></div><div><h4>待确认问题</h4><ul id="questions"></ul></div></div><div class="actions"><button id="save-prompt" class="secondary" type="submit">保存提示词修改</button><button id="refine-again" class="text-button" type="button">重新优化</button></div></form><div class="approval"><label class="check"><input type="checkbox" id="prompt-checked">我已检查补充设定，使用当前提示词创作。</label><button id="generate" class="primary" disabled><span>交给主创 Agent</span><span>→</span></button></div></section>
-<section id="result" hidden><div class="subheading"><h3 id="result-title">创作草稿</h3><span class="tag">等待你的定稿</span></div><form id="creative-form"><label>作品标题<input name="headline" maxlength="60" required></label><label>正文 / 故事梗概<textarea name="intro" rows="5" maxlength="3000" required></textarea></label><div id="shots" class="shots"></div><div class="actions"><button type="submit" class="secondary" id="save">保存草稿修改</button></div></form><div class="approval"><label class="check"><input type="checkbox" id="checked">我已检查内容与设定，确认当前版本。</label><button id="approve" class="primary" disabled>确认作品草稿 ↗</button></div><div id="downloads" hidden><h3>带走这份灵感</h3><div class="download-links"><a id="download-copy">下载创作稿 TXT ↗</a><a id="download-project">下载完整项目 JSON ↗</a><a id="download-poster" hidden>旧版海报 SVG ↗</a><button id="media-request" class="secondary">导出媒体任务说明</button></div><p class="muted">漫画与动画导出的是分格、分镜及提示词；尚未生成图片或视频。</p></div></section>
-</div><div id="retry-box" hidden><p>这一步没有完成，已有资料已保存。</p><button id="retry" class="secondary">重试这一步</button></div><details id="trace-box" hidden><summary>Agent 执行记录与 Skill 来源</summary><div id="used-skills"></div><ol id="trace"></ol></details>
-</section></div></div><footer><span>漫想工坊 / 灵感的下一种可能</span><span>所有草稿，由你作最后决定。</span></footer></main></div>
-<dialog id="background-dialog"><div class="section-title"><h2>为工坊换一张背景</h2><button id="background-close" class="secondary" aria-label="关闭背景设置">✕</button></div><p class="muted">选择喜欢的动漫图片，调整到舒服的亮度。图片仅在本机预览，不会上传。</p><label>选择本机图片<input id="background-file" type="file" accept="image/png,image/jpeg,image/webp,image/avif"></label><label>背景可见度<input id="background-opacity" type="range" min="0" max="0.65" step="0.01" value="0.28"></label><button id="background-reset" class="secondary">恢复默认</button><p class="muted">永久设置：把图片放入 public/assets，再修改 public/theme.json。</p></dialog>
-<script src="/app.js" type="module"></script></body></html>
+<dialog id="background-dialog"><div class="section-title"><h2>把喜欢的风景，带进工坊。</h2><button id="background-close" class="secondary" aria-label="关闭背景设置">✕</button></div><p class="muted">选一张喜欢的动漫图片，调整到舒服的可见度。图片仅在本机预览。</p><label>选择图片<input id="background-file" type="file" accept="image/png,image/jpeg,image/webp,image/avif"></label><label>背景可见度<input id="background-opacity" type="range" min="0" max="0.65" step="0.01" value="0.28"></label><button id="background-reset" class="secondary">恢复默认背景</button><details><summary>保存为默认背景</summary><p class="muted">将图片放入 public/assets，再修改 public/theme.json 的 backgroundImage。主题配色会自动记住你的选择。</p></details></dialog>
+<script src="/app.js" type="module"></script>
+</body>
+</html>

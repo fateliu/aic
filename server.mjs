@@ -8,6 +8,7 @@ import { validateBrief, validateCreative, runAgent, campaignText, posterSvg } fr
 import { DEFAULT_DEEPSEEK_MODEL } from './lib/providers.mjs';
 import { listSkills, loadSkills } from './lib/skills.mjs';
 import { validateStudioBrief, validateRefinement, validateStudioCreative, refinePrompt, runStudio, studioText } from './lib/studio.mjs';
+import { createImageProvider, submitImage, refreshImage, readImage, recoverImage } from './lib/images.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 async function jsonBody(req) {
@@ -20,7 +21,7 @@ async function jsonBody(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { throw fail('请求不是有效的 JSON'); }
 }
-export function createApp({ directory = process.env.DATA_DIR || join(root, 'data'), model = process.env.OLLAMA_MODEL, baseUrl = process.env.OLLAMA_BASE_URL, agent = runAgent, deepseekKey = process.env.DEEPSEEK_API_KEY, deepseekModel = process.env.DEEPSEEK_MODEL || DEFAULT_DEEPSEEK_MODEL, deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com', refiner = refinePrompt, studio = runStudio } = {}) {
+export function createApp({ directory = process.env.DATA_DIR || join(root, 'data'), model = process.env.OLLAMA_MODEL, baseUrl = process.env.OLLAMA_BASE_URL, agent = runAgent, deepseekKey = process.env.DEEPSEEK_API_KEY, deepseekModel = process.env.DEEPSEEK_MODEL || DEFAULT_DEEPSEEK_MODEL, deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com', refiner = refinePrompt, studio = runStudio, imageProvider = createImageProvider({ apiKey: process.env.DASHSCOPE_API_KEY, baseUrl: process.env.DASHSCOPE_BASE_URL, model: process.env.DASHSCOPE_IMAGE_MODEL }) } = {}) {
   const store = new Store(directory), locks = new Set();
   const providerOptions = mode => mode === 'deepseek' ? { mode, apiKey: deepseekKey, model: deepseekModel, baseUrl: deepseekBaseUrl } : { mode, model, baseUrl };
   return http.createServer(async (req, res) => {
@@ -41,10 +42,25 @@ export function createApp({ directory = process.env.DATA_DIR || join(root, 'data
       if (!['GET', 'HEAD'].includes(req.method) && !req.headers['content-type']?.startsWith('application/json')) throw fail('请使用 JSON 请求', 415);
       if (req.method === 'GET' && url.pathname === '/api/config') {
         const theme = JSON.parse(await readFile(join(root, 'public', 'theme.json'), 'utf8'));
-        return send({ brand: '漫想工坊', ollamaAvailable: Boolean(model), model: model || null, deepseekAvailable: Boolean(deepseekKey), deepseekModel, theme, media: { image: false, animation: false } });
+return send({ brand: '漫想工坊', ollamaAvailable: Boolean(model), model: model || null, deepseekAvailable: Boolean(deepseekKey), deepseekModel, theme, media: { image: imageProvider.available, imageModel: imageProvider.model, simulation: imageProvider.simulation === true, animation: false } });
       }
       if (req.method === 'GET' && url.pathname === '/api/skills') return send(await listSkills());
       if (req.method === 'GET' && url.pathname === '/api/projects') return send(await store.list());
+      const imageRoute = url.pathname.match(/^\/api\/projects\/([a-f0-9-]{36})\/images(?:\/([a-f0-9-]{36})\/(refresh|recover|file))?$/);
+      if (imageRoute) {
+        const [, id, jobId, action] = imageRoute;
+        if (req.method === 'GET' && action === 'file') {
+          const bytes = await readImage(store, await store.get(id), jobId);
+          if (url.searchParams.get('download') === '1') res.setHeader('Content-Disposition', `attachment; filename="manxiang-${jobId}.png"`);
+          return send(bytes, 200, 'image/png');
+        }
+        if (req.method !== 'POST' || (action && !['refresh', 'recover'].includes(action))) throw fail('请求方法不支持', 405);
+        if (locks.has(id)) throw fail('该项目正在处理中，请稍后刷新', 409);
+        locks.add(id); lock = id;
+        const input = await jsonBody(req), project = await store.get(id);
+        if (action === 'recover') return send(await recoverImage(store, project, jobId, input.taskId, imageProvider));
+        return send(action === 'refresh' ? await refreshImage(store, project, jobId, imageProvider) : await submitImage(store, project, input, imageProvider));
+      }
       if (req.method === 'POST' && url.pathname === '/api/projects') {
         const input = await jsonBody(req);
         const isStudio = input.brief?.kind !== undefined;
@@ -67,12 +83,12 @@ export function createApp({ directory = process.env.DATA_DIR || join(root, 'data
           if (project.status !== 'approved') throw fail('请先核对并确认草稿', 409);
           const format = url.searchParams.get('format');
           if (!['svg', 'txt', 'json'].includes(format)) throw fail('不支持的导出格式');
-          if (project.schemaVersion === 2 && format === 'svg') throw fail('当前提供提示词和脚本，图片生成服务尚未接入', 409);
+          if (project.schemaVersion === 2 && format === 'svg') throw fail('新版生成图片请从图片预览区下载 PNG', 409);
           res.setHeader('Content-Disposition', `attachment; filename="campaign-${id}.${format}"`);
           if (format === 'svg') return send(posterSvg(project), 200, 'image/svg+xml; charset=utf-8');
           const text = project.schemaVersion === 2 ? studioText(project) : campaignText(project);
           if (format === 'txt') return send(text, 200, 'text/plain; charset=utf-8');
-          return send({ ...project, copy: text, media: { image: 'not-connected', video: 'storyboard-only' } });
+          return send({ ...project, copy: text, media: { image: project.imageJobs?.some(j => j.revision === project.revision && j.status === 'SUCCEEDED') ? 'generated' : 'not-generated', video: 'storyboard-only' } });
         }
         if (!['POST', 'PATCH'].includes(req.method)) throw fail('请求方法不支持', 405);
         if (locks.has(id)) throw fail('该项目正在处理中，请稍后重试', 409);
@@ -82,7 +98,8 @@ export function createApp({ directory = process.env.DATA_DIR || join(root, 'data
         if (action === 'media-request' && req.method === 'POST') {
           if (project.status !== 'approved' || project.schemaVersion !== 2) throw fail('请先确认新版创作草稿', 409);
           if (project.brief.kind === 'text') throw fail('文字项目不需要媒体生成');
-          return send({ status: 'not_connected', message: '尚未接入图片或动画服务；没有提交任务或产生费用', request: { version: 1, projectId: project.id, revision: project.revision, kind: project.brief.kind, ratio: project.brief.ratio, characterAnchor: project.refinement.characterAnchor, negativePrompt: project.refinement.negativePrompt, units: project.creative.shots } }, 200);
+          const ready = imageProvider.available && ['image', 'comic'].includes(project.brief.kind);
+          return send({ status: ready ? 'ready' : 'not_connected', message: ready ? '已导出任务说明，未提交生图；请在图片生成区域选择画面并确认费用。' : '该媒体服务尚未配置；没有提交任务或产生费用', request: { version: 1, projectId: project.id, revision: project.revision, kind: project.brief.kind, ratio: project.brief.ratio, characterAnchor: project.refinement.characterAnchor, negativePrompt: project.refinement.negativePrompt, units: project.creative.shots } }, 200);
         } else if (action === 'refine' && req.method === 'POST') {
           if (project.schemaVersion !== 2) throw fail('旧项目不支持提示词子 Agent，请新建项目');
           if (input.revision !== project.revision) throw fail('项目已更新，请重新打开后再优化', 409);
@@ -130,7 +147,7 @@ export function createApp({ directory = process.env.DATA_DIR || join(root, 'data
         project.updatedAt = new Date().toISOString();
         return send(await store.save(project));
       }
-      const assets = { '/': ['index.html', 'text/html; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'], '/style.css': ['style.css', 'text/css; charset=utf-8'] };
+      const assets = { '/': ['index.html', 'text/html; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'], '/appearance.js': ['appearance.js', 'text/javascript; charset=utf-8'], '/images.js': ['images.js', 'text/javascript; charset=utf-8'], '/style.css': ['style.css', 'text/css; charset=utf-8'] };
       const imageAsset = url.pathname.match(/^\/assets\/([a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp|avif))$/);
       if (req.method === 'GET' && imageAsset) {
         try { return send(await readFile(join(root, 'public', 'assets', imageAsset[1])), 200, `image/${imageAsset[2] === 'jpg' ? 'jpeg' : imageAsset[2]}`); }

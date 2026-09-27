@@ -1,7 +1,11 @@
+import { createImagePanel } from '/images.js';
+import { setupAppearance } from '/appearance.js';
+const appearance = setupAppearance();
 const $ = selector => document.querySelector(selector);
 const kindNames = { text: '文字', image: '图片', comic: '漫画', animation: '动画', legacy: '旧版活动' };
 const labels = { draft: '待优化', refining: '优化中', prompt_review: '待确认提示词', generating: '创作中', review: '待确认草稿', approved: '已确认', failed: '执行失败' };
 let current = null, kind = 'comic', config = {}, catalog = [], busy = false, dirty = false, promptDirty = false, backgroundUrl = null;
+const imagePanel = createImagePanel({ project: () => current, config: () => config, blocked: () => busy || dirty || promptDirty, request: api, run: work, notify: notice, update: p => { if (current?.id === p.id) { current.imageJobs = p.imageJobs; current.trace = p.trace; updateProjectContext(); } } });
 function notice(message, error = false) { $('#notice').textContent = message; $('#notice').classList.toggle('error', error); }
 async function api(path, method = 'GET', body) {
   const response = await fetch(path, { method, headers: body === undefined ? {} : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -18,7 +22,9 @@ function setControls() {
   $('#downloads').hidden = !current || current.status !== 'approved' || dirty || promptDirty;
   $('#mode option[value="deepseek"]').disabled = !config.deepseekAvailable;
   $('#mode option[value="ollama"]').disabled = !config.ollamaAvailable;
-  $('#create').textContent = busy ? '正在处理，请稍候…' : '让提示词更精准 ✦';
+  $('#create').textContent = busy ? '正在处理，请稍候…' : '让提示词更精准 ↗';
+  document.querySelectorAll('[data-palette-option], #scene-shuffle, #background-open').forEach(el => { el.disabled = false; });
+  imagePanel.sync();
 }
 async function work(fn) {
   if (busy) return;
@@ -48,24 +54,41 @@ async function history() {
   const projects = await api('/api/projects');
   $('#history').replaceChildren();
   for (const project of projects) {
-    const button = document.createElement('button'); button.className = 'history-item'; button.disabled = busy;
+    const button = document.createElement('button'); button.className = 'history-item'; button.disabled = busy; button.dataset.projectId = project.id;
     const name = document.createElement('span'), meta = document.createElement('small'); name.textContent = project.name; meta.textContent = `${kindNames[project.kind] || '创作'} · ${labels[project.status] || project.status}`; button.append(name, meta);
     button.onclick = () => { if (canLeave()) work(async () => { const p = await api(`/api/projects/${project.id}`); render(p); notice('已打开保存的项目。左侧输入用于创建新项目。'); }); };
     $('#history').append(button);
   }
+  updateProjectContext();
+}
+function updateProjectContext() {
+  document.querySelectorAll('.history-item').forEach(button => {
+    const active = button.dataset.projectId === current?.id;
+    button.classList.toggle('is-current', active); button.setAttribute('aria-current', String(active));
+  });
+  if (!current) return;
+  $('#project-title').textContent = current.brief.name;
+  $('#project-kind').textContent = kindNames[current.brief.kind || 'legacy'];
+  $('#project-version').textContent = `第 ${current.revision + 1} 版`;
+  $('#jump-prompt').hidden = !current.refinement;
+  $('#jump-draft').hidden = !current.creative;
+  $('#jump-media').hidden = current.schemaVersion !== 2 || !['image', 'comic'].includes(current.brief.kind);
+  const completed = new Set((current.imageJobs || []).filter(j => j.revision === current.revision && j.status === 'SUCCEEDED').map(j => j.unitIndex)).size;
+  $('#jump-media-label').textContent = completed ? `图片 · ${completed} 张` : '图片生成';
 }
 function renderList(selector, values, empty) {
   $(selector).replaceChildren(...(values.length ? values : [empty]).map(value => { const li = document.createElement('li'); li.textContent = value; return li; }));
 }
 function render(project) {
   current = project; dirty = false; promptDirty = false;
+  updateProjectContext();
   const modern = project.schemaVersion === 2;
   $('#status').textContent = labels[project.status] || project.status;
   $('#empty').hidden = true; $('#project-view').hidden = false;
   $('#refinement-section').hidden = !project.refinement; $('#result').hidden = !project.creative;
   $('#retry-box').hidden = !['draft', 'refining', 'generating', 'failed'].includes(project.status);
   $('#prompt-checked').checked = false; $('#checked').checked = project.status === 'approved';
-  $('#provenance').textContent = project.provider === 'demo' ? '规则演示 · 未调用模型 · 图片与动画尚未生成' : `${project.provider === 'deepseek' ? 'DeepSeek' : 'Ollama'} · ${project.model || '待调用'} · 请核对模型输出`;
+  $('#provenance').textContent = project.provider === 'demo' ? (config.media?.simulation ? '本机练习 · 规则文案与模拟素材，不调用付费接口' : '文案使用规则演示 · 图片生成是独立的真实 API 调用') : `${project.provider === 'deepseek' ? 'DeepSeek' : 'Ollama'} · ${project.model || '待调用'} · 请核对模型输出`;
   const b = project.brief;
   $('#facts').textContent = modern ? `${b.prompt}\n\n${kindNames[b.kind]} / ${b.style} / ${b.ratio}` : `活动：${b.name}\n时间：${b.time}\n地点：${b.location}\n面向：${b.audience}\n报名：${b.signup}`;
   if (project.refinement) {
@@ -95,6 +118,7 @@ function render(project) {
   $('#trace').replaceChildren(...project.trace.map(event => { const li = document.createElement('li'); li.textContent = `${event.agent === 'prompt_subagent' ? '提示词子 Agent' : event.agent === 'director' ? '主创 Agent' : event.agent || '工作流'} / ${event.tool}：${event.detail}`; return li; }));
   $('#used-skills').textContent = (project.skills || []).map(s => `${s.name} · ${s.origin} · SHA256 ${s.sha256.slice(0, 12)}`).join('\n');
   setControls();
+  imagePanel.render();
 }
 async function runStage(stage) {
   $('#status').textContent = stage === 'refine' ? '子 Agent 优化中' : '主 Agent 创作中';
@@ -130,7 +154,7 @@ $('#creative-form').onsubmit = event => {
 $('#checked').onchange = setControls; $('#prompt-checked').onchange = setControls;
 $('#approve').onclick = () => work(async () => { render(await api(`/api/projects/${current.id}/approve`, 'POST', { revision: current.revision })); await history(); notice('当前版本已确认，可以导出创作稿和完整项目。'); });
 $('#retry').onclick = () => work(() => runStage(current.schemaVersion !== 2 || current.lastOperation === 'generate' ? 'generate' : 'refine'));
-$('#new-project').onclick = () => { if (!canLeave()) return; current = null; dirty = false; promptDirty = false; $('#brief-form').reset(); $('#project-view').hidden = true; $('#empty').hidden = false; $('#retry-box').hidden = true; $('#trace-box').hidden = true; $('#status').textContent = '等待灵感'; if (config.deepseekAvailable) $('#mode').value = 'deepseek'; updateEngine(); setControls(); $('#brief-form textarea').focus(); notice('开始一份新的创作。'); };
+$('#new-project').onclick = () => { if (!canLeave()) return; imagePanel.clear(); current = null; updateProjectContext(); dirty = false; promptDirty = false; $('#brief-form').reset(); $('#project-view').hidden = true; $('#empty').hidden = false; $('#retry-box').hidden = true; $('#trace-box').hidden = true; $('#status').textContent = '等待灵感'; if (config.deepseekAvailable) $('#mode').value = 'deepseek'; updateEngine(); setControls(); $('#brief-form textarea').focus(); notice('开始一份新的创作。'); };
 function downloadJson(value, filename) { const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 $('#media-request').onclick = () => work(async () => { const result = await api(`/api/projects/${current.id}/media-request`, 'POST', {}); downloadJson(result, `media-request-${current.id}.json`); notice(result.message); });
 function updateEngine() { const mode = $('#mode').value; $('#provider-badge').textContent = mode === 'deepseek' ? 'DeepSeek 已配置' : mode === 'ollama' ? 'Ollama 已配置' : '规则演示'; $('#engine-help').textContent = mode === 'demo' ? '演示模式使用模板，不调用大模型。' : mode === 'deepseek' ? '提示词优化与创作会调用你的 DeepSeek API，按账户计费。' : '使用你本机的 Ollama 模型。'; }
@@ -157,5 +181,5 @@ try {
   [config, catalog] = await Promise.all([api('/api/config'), api('/api/skills')]);
   if (config.deepseekAvailable) { $('#mode option[value="deepseek"]').textContent = `DeepSeek · ${config.deepseekModel}`; $('#mode').value = 'deepseek'; }
   if (config.ollamaAvailable) $('#mode option[value="ollama"]').textContent = `Ollama · ${config.model}`;
-  applyTheme(config.theme); renderSkills(); updateEngine(); setControls(); await history();
+  appearance.configure(config.theme); applyTheme(config.theme); renderSkills(); updateEngine(); setControls(); await history();
 } catch (error) { notice(`连接失败：${error.message}`, true); }
