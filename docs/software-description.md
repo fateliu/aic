@@ -1,4 +1,4 @@
-# 漫想工坊软件说明 v0.4
+# 漫想工坊软件说明 v0.5
 
 ## 定位与交付
 
@@ -23,7 +23,9 @@
 
 ## 持久化与恢复
 
-`data/<projectId>.json` 保存项目；`data/images/<projectId>/<jobId>.png` 保存图片。复制整个 data 目录可备份。JSON 导出不包含 PNG 二进制，也没有项目导入功能。
+`data/<projectId>.json` 保存项目；`data/images/<projectId>/<jobId>.png` 保存生成图片；`data/references/<projectId>/<referenceId>.jpg` 保存用户上传的角色参考。复制整个 data 目录可备份。JSON 导出不包含图片二进制，也没有项目导入功能。
+
+v0.5 支持在图片/漫画项目上传参考图，明确选择每次生图使用的角色来源。提示词默认折叠，分格显示简短摘要，可分别展开修改。输入限制、使用方法与图像发送时机见 [角色参考图说明](reference-images.md)。
 
 图片任务收到 task_id 后可以跨网页刷新、服务重启继续查询。没有独立后台轮询进程：需要网页打开该项目或调用 refresh API 才会推进查询/下载。生成服务的临时结果链接有有效期，应及时保存；已存本地的 PNG 不依赖临时链接。
 
@@ -53,7 +55,9 @@
 | `POST /api/projects/:id/generate` | 根据已检查的提示词创作草稿 |
 | `PATCH /api/projects/:id/creative` | 编辑草稿，撤销作品确认 |
 | `POST /api/projects/:id/approve` | 确认当前草稿版本 |
-| `POST /api/projects/:id/images` | 单张生图；revision、unitIndex、confirmCost，选填 replaceJobId / referenceJobId |
+| `POST /api/projects/:id/images` | 单张生图；revision、unitIndex、confirmCost，选填 replaceJobId 及互斥的 referenceUploadId / referenceJobId |
+| `POST /api/projects/:id/references` | 保存上传参考图，返回 project / reference，不提交模型 |
+| `GET /api/projects/:id/references/:referenceId/file` | 同项目参考图 JPEG 预览 |
 | `POST /api/projects/:id/images/:jobId/refresh` | 查询已有任务并保存结果 |
 | `POST /api/projects/:id/images/:jobId/recover` | 用控制台 taskId 找回结果未知的任务 |
 | `GET /api/projects/:id/images/:jobId/file` | 本地 PNG；`?download=1` 下载 |

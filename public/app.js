@@ -80,6 +80,7 @@ function renderList(selector, values, empty) {
   $(selector).replaceChildren(...(values.length ? values : [empty]).map(value => { const li = document.createElement('li'); li.textContent = value; return li; }));
 }
 function render(project) {
+  if (current?.id !== project.id || current?.refinement?.refinedPrompt !== project.refinement?.refinedPrompt) $('#prompt-details').open = false;
   current = project; dirty = false; promptDirty = false;
   updateProjectContext();
   const modern = project.schemaVersion === 2;
@@ -102,11 +103,17 @@ function render(project) {
     $('#result-title').textContent = modern ? `${kindNames[b.kind]}创作草稿` : '旧版活动草稿';
     $('#shots').replaceChildren();
     project.creative.shots.forEach((shot, i) => {
-      const article = document.createElement('article'); article.className = 'shot';
-      const index = document.createElement('div'); index.className = 'shot-index'; index.textContent = `${b.kind === 'comic' ? '分格' : b.kind === 'animation' ? '镜头' : '内容单元'} ${String(i + 1).padStart(2, '0')}${shot.duration ? ` / ${shot.duration} SEC` : ''}`; article.append(index);
+      const article = document.createElement('details'); article.className = 'shot shot-fold';
+      const summary = document.createElement('summary');
+      const index = document.createElement('span'); index.className = 'shot-index'; index.textContent = `${b.kind === 'comic' ? '分格' : b.kind === 'animation' ? '镜头' : '内容单元'} ${String(i + 1).padStart(2, '0')}${shot.duration ? ` / ${shot.duration} SEC` : ''}`;
+      const preview = document.createElement('span'); preview.className = 'shot-preview'; preview.textContent = shot.visual;
+      const action = document.createElement('span'); action.className = 'shot-fold-action'; action.textContent = '查看 / 编辑 ↗';
+      summary.append(index, preview, action); article.append(summary);
       for (const [key, title, max] of [['visual', '画面 / 段落描述', modern ? 1500 : 240], ['narration', '对白 / 旁白', modern ? 400 : 100]]) {
         const label = document.createElement('label'); label.textContent = title;
-        const field = document.createElement('textarea'); field.name = `${key}${i}`; field.rows = key === 'visual' ? 5 : 2; field.maxLength = max; field.required = key === 'visual' || !modern; field.value = shot[key]; label.append(field); article.append(label);
+        const field = document.createElement('textarea'); field.name = `${key}${i}`; field.rows = key === 'visual' ? 5 : 2; field.maxLength = max; field.required = key === 'visual' || !modern; field.value = shot[key];
+        if (key === 'visual') field.addEventListener('input', () => { preview.textContent = field.value; });
+        field.addEventListener('invalid', () => { article.open = true; }); label.append(field); article.append(label);
       }
       $('#shots').append(article);
     });
@@ -152,6 +159,8 @@ $('#creative-form').onsubmit = event => {
   work(async () => { const creative = { headline: data.headline, intro: data.intro, shots: current.creative.shots.map((_, i) => ({ visual: data[`visual${i}`], narration: data[`narration${i}`] })) }; render(await api(`/api/projects/${current.id}/creative`, 'PATCH', { creative, revision: current.revision })); await history(); notice('草稿已保存，请重新确认。'); });
 };
 $('#checked').onchange = setControls; $('#prompt-checked').onchange = setControls;
+$('#jump-prompt').onclick = () => { $('#prompt-details').open = true; };
+$('#refinement-form').addEventListener('invalid', event => { $('#prompt-details').open = true; const detail = event.target.closest('details'); if (detail) detail.open = true; }, true);
 $('#approve').onclick = () => work(async () => { render(await api(`/api/projects/${current.id}/approve`, 'POST', { revision: current.revision })); await history(); notice('当前版本已确认，可以导出创作稿和完整项目。'); });
 $('#retry').onclick = () => work(() => runStage(current.schemaVersion !== 2 || current.lastOperation === 'generate' ? 'generate' : 'refine'));
 $('#new-project').onclick = () => { if (!canLeave()) return; imagePanel.clear(); current = null; updateProjectContext(); dirty = false; promptDirty = false; $('#brief-form').reset(); $('#project-view').hidden = true; $('#empty').hidden = false; $('#retry-box').hidden = true; $('#trace-box').hidden = true; $('#status').textContent = '等待灵感'; if (config.deepseekAvailable) $('#mode').value = 'deepseek'; updateEngine(); setControls(); $('#brief-form textarea').focus(); notice('开始一份新的创作。'); };

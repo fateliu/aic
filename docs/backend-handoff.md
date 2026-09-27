@@ -1,11 +1,11 @@
-# 后端交接与接口约定 v0.4
+# 后端交接与接口约定 v0.5
 
 这份文档描述**已经存在的接口**。服务端图片 worker、数据库、多用户登录、视频渲染属于待开发内容。接手前先运行 `npm test` 和 `npm run dev:mock`，阅读 `server.mjs`、`lib/studio.mjs`、`lib/images.mjs`。
 
 ## 1. 边界与配置
 
 - 正常服务：`http://127.0.0.1:3000`；无密钥练习：`http://127.0.0.1:3100`。当前前后端同源，前端调用相对路径 `/api/...`。
-- 写请求使用 `Content-Type: application/json`，正文上限 98,304 字节。当前只接受本机 Host 和同源 Origin；没有用户登录，也没有跨域前端配置。
+- 写请求使用 `Content-Type: application/json`，普通正文上限 98,304 字节。仅参考图上传使用单独的 Base64 体积上限，见下文。当前只接受本机 Host 和同源 Origin；没有用户登录，也没有跨域前端配置。
 - 密钥只在后端读取 `.env`。`GET /api/config` 只返回是否配置，不返回 Key。练习入口显式禁用真实文本服务并注入模拟图片服务。
 - createApp 返回原生 Node HTTP Server。可注入 directory、refiner、studio、imageProvider 等依赖；正式启动入口才加载 `.env`。
 - 后端如要改语言或框架，应先保持本文请求/响应一致，通过现有流程验收，再协商迁移。当前不需要重做前端。
@@ -43,7 +43,7 @@ revision 从 0 开始。refine 成功、修改 refinement、generate 成功、�
 
 ## 3. 按调用顺序对接
 
-以下响应除创建状态码 201 外，成功默认 200。成功的项目写操作返回**完整更新后项目**，前端必须取返回的 revision，不能自行推算并发状态。
+以下响应除创建状态码 201 外，成功默认 200。成功的项目写操作返回**完整更新后项目**（参考图上传为 `{project,reference}`），前端必须取返回的 revision，不能自行推算并发状态。
 
 ### 创建
 
@@ -85,6 +85,10 @@ mode 支持 demo/deepseek/ollama；真实模式要求对应服务已配置。最
 
 ### 图片阶段
 
+上传用户角色参考图：`POST /api/projects/:id/references`，正文 `{revision,name,dataUrl}`。前端先解码并转换为不透明 JPEG，dataUrl 使用 `data:image/jpeg;base64,...`。返回 `{project,reference}`，只保存素材，不调用模型，不改变草稿确认。每项目最多 12 张，按 SHA256 去重。宽高 240–2048、比例最多 8:1、文件最多 5 MiB；该路由 JSON 上限 `ceil(5 MiB / 3) * 4 + 4096`。
+
+`GET /api/projects/:id/references/:referenceId/file` 读取同项目 JPEG，素材记录位于 `project.references`，文件位于 `data/references/`。完整字段、限制与错误语义见 [角色参考图接口](reference-images.md)。
+
 `POST /api/projects/:id/images`：
 
 ```json
@@ -95,9 +99,9 @@ unitIndex 从 0 开始。要求新版图片/漫画项目、最新 approved 版�
 
 再次生成同一格须加 `replaceJobId`，值为当前那格的最新旧任务 ID；只有成功、失败或取消的任务可明确替换。重复的相同替换请求返回已创建的新任务。
 
-漫画后续格可加 `referenceJobId`：当前项目、当前 revision 的成功图片 jobId。服务端读取本地 PNG 并编码给提供方；浏览器不上传 base64，不把参考图二进制写进项目 JSON。
+单张图片或漫画可加 `referenceUploadId`，引用本项目上传素材。漫画也可加 `referenceJobId`：当前项目、当前 revision 的成功图片 jobId。两者互斥；不传表示纯文字生图。服务端读取所选本地图片并临时编码给提供方，项目 JSON 不保存参考图二进制。每个请求由前端明确选择来源，上传新图不会修改已有任务。
 
-job 常用字段：id、revision、unitIndex、model、prompt、size、status、taskId、asset、error、lastPollError、referenceJobId、replaces、createdAt/updatedAt。taskId 是供应商 ID，不能替代本地 jobId；asset 是本机 `/api/.../file` 路径。
+job 常用字段：id、revision、unitIndex、model、prompt、size、status、taskId、asset、error、lastPollError、referenceJobId、referenceUploadId、referenceName、replaces、createdAt/updatedAt。taskId 是供应商 ID，不能替代本地 jobId；asset 是本机 `/api/.../file` 路径。
 
 `POST /api/projects/:id/images/:jobId/refresh` 使用 `{}`，只查询/下载已有任务。
 

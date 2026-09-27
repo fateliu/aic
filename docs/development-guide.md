@@ -68,6 +68,7 @@ aic/
 | `lib/studio.mjs` | 新版 brief/提示词/草稿校验，主子 Agent 编排与规则演示，TXT 导出 | 调整创作类型、提示词、工具流程 |
 | `lib/providers.mjs` | DeepSeek / Ollama 文本协议，JSON 和工具消息适配 | 接新文本模型、修改供应商协议 |
 | `lib/images.mjs` | 百炼适配、单张提交去重、轮询、下载、恢复、角色参考 | 接新图片服务、排查生图问题 |
+| `lib/references.mjs` | 上传参考图的结构校验、去重、保存、同项目读取 | 改上传规范或素材存储 |
 | `lib/image-provider.d.ts` | 图片适配器的方法与返回值约定，供编辑器阅读 | 前后端协商扩展提供方能力 |
 | `lib/store.mjs` | 项目 JSON 的保存、读取、列表、原子替换 | 存储迁移、备份、数据读写问题 |
 | `lib/skills.mjs` | Skill 白名单、类型过滤、内容快照与 SHA256 | 扩展指令包加载规则 |
@@ -76,6 +77,7 @@ aic/
 | `public/style.css` | 红蓝变量、斜切构图、角色裁切、表单与手机适配 | 改视觉风格和响应式布局 |
 | `public/app.js` | 表单事件、项目状态、确认、历史、阶段跳转、背景 | 调整前端业务交互 |
 | `public/images.js` | 图片提交、状态轮询、预览、参考选择、Canvas 四格合成 | 改媒体操作与下载体验 |
+| `public/references.js` | 参考图解码压缩、上传、预览与来源选择 | 改角色参考交互 |
 | `public/appearance.js` | 红蓝配色、偏好保存、受控随机装饰、主视觉配置 | 调整主题行为，不涉及模型调用 |
 | `public/theme.json` | 默认主题、两张主视觉和背景配置 | 换图片或改默认配色，无需改业务逻辑 |
 | `public/assets/hero-sky.png` / `hero-flare.png` | 用户提供的角色皮肤图片 | 更换角色主视觉，登记来源 |
@@ -86,6 +88,7 @@ aic/
 | `test/agent.test.mjs` | 旧版活动流程测试 | 改旧版流程时 |
 | `test/studio.test.mjs` | 主子 Agent、Skill、确认/版本与 HTTP 测试 | 改文本编排和新版状态时 |
 | `test/images.test.mjs` | 图片协议、去重、恢复、参考图、下载与锁 | 改图片服务时 |
+| `test/references.test.mjs` / `test/fixtures/reference.jpg` | 上传校验、文件隔离、图文请求、HTTP 门禁与纯色 JPEG 夹具 | 改上传和图片输入时 |
 | `.github/workflows/test.yml` | 在 Windows / Ubuntu 与 Node 22 / 24 上跑测试 | 改支持环境或 CI |
 
 `.mjs` 是使用 ES Modules 的 JavaScript；`.d.ts` 是类型说明，当前不需要 TypeScript 编译步骤；`.md` 是 Markdown 文档；`.json` 是结构化配置/数据。

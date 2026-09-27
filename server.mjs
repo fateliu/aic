@@ -9,13 +9,14 @@ import { DEFAULT_DEEPSEEK_MODEL } from './lib/providers.mjs';
 import { listSkills, loadSkills } from './lib/skills.mjs';
 import { validateStudioBrief, validateRefinement, validateStudioCreative, refinePrompt, runStudio, studioText } from './lib/studio.mjs';
 import { createImageProvider, submitImage, refreshImage, readImage, recoverImage } from './lib/images.mjs';
+import { uploadReference, readReference, REFERENCE_BODY_LIMIT } from './lib/references.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
-async function jsonBody(req) {
+async function jsonBody(req, limit = 98_304) {
   let size = 0, chunks = [];
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 98_304) throw fail('请求内容过大', 413);
+    if (size > limit) throw fail('请求内容过大', 413);
     chunks.push(chunk);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
@@ -46,6 +47,16 @@ return send({ brand: '漫想工坊', ollamaAvailable: Boolean(model), model: mod
       }
       if (req.method === 'GET' && url.pathname === '/api/skills') return send(await listSkills());
       if (req.method === 'GET' && url.pathname === '/api/projects') return send(await store.list());
+      const referenceRoute = url.pathname.match(/^\/api\/projects\/([a-f0-9-]{36})\/references(?:\/([a-f0-9-]{36})\/file)?$/);
+      if (referenceRoute) {
+        const [, id, referenceId] = referenceRoute;
+        if (req.method === 'GET' && referenceId) return send(await readReference(store, await store.get(id), referenceId), 200, 'image/jpeg');
+        if (req.method !== 'POST' || referenceId) throw fail('请求方法不支持', 405);
+        if (locks.has(id)) throw fail('该项目正在处理中，请稍后上传', 409);
+        locks.add(id); lock = id;
+        const project = await store.get(id), input = await jsonBody(req, REFERENCE_BODY_LIMIT);
+        return send(await uploadReference(store, project, input));
+      }
       const imageRoute = url.pathname.match(/^\/api\/projects\/([a-f0-9-]{36})\/images(?:\/([a-f0-9-]{36})\/(refresh|recover|file))?$/);
       if (imageRoute) {
         const [, id, jobId, action] = imageRoute;
@@ -147,7 +158,7 @@ return send({ brand: '漫想工坊', ollamaAvailable: Boolean(model), model: mod
         project.updatedAt = new Date().toISOString();
         return send(await store.save(project));
       }
-      const assets = { '/': ['index.html', 'text/html; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'], '/appearance.js': ['appearance.js', 'text/javascript; charset=utf-8'], '/images.js': ['images.js', 'text/javascript; charset=utf-8'], '/style.css': ['style.css', 'text/css; charset=utf-8'] };
+      const assets = { '/references.js': ['references.js', 'text/javascript; charset=utf-8'], '/': ['index.html', 'text/html; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'], '/appearance.js': ['appearance.js', 'text/javascript; charset=utf-8'], '/images.js': ['images.js', 'text/javascript; charset=utf-8'], '/style.css': ['style.css', 'text/css; charset=utf-8'] };
       const imageAsset = url.pathname.match(/^\/assets\/([a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp|avif))$/);
       if (req.method === 'GET' && imageAsset) {
         try { return send(await readFile(join(root, 'public', 'assets', imageAsset[1])), 200, `image/${imageAsset[2] === 'jpg' ? 'jpeg' : imageAsset[2]}`); }

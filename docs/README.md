@@ -13,6 +13,7 @@
 | 记录真正的用户反馈 | [试用记录模板](qa/user-feedback-template.md) |
 | 了解红蓝主题怎么改 | [视觉系统说明](design-system.md) |
 | 使用产品或排查启动问题 | [软件说明](software-description.md) |
+| 上传二次元角色图、了解图文生图接口 | [角色参考图使用与接入](reference-images.md) |
 | 理解 Agent / Skill / 图片任务 | [架构](agent-prototype.md)、[核心编排](core-algorithm.md) |
 | 核对测试结果 | [测试报告](test-report.md) |
 | 准备比赛材料 | [材料清单](submission-checklist.md)、[演示脚本](demo-script.md)、[评估计划](evaluation-plan.md) |

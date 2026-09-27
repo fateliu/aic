@@ -8,6 +8,7 @@ export interface ImageProvider {
   submit(input: {
     prompt: string;
     size: string;
+    /** Optional data URL: uploaded opaque JPEG or a saved generated PNG. Never persist it in job JSON. */
     referenceImage?: string;
   }): Promise<{ taskId: string; status: 'PENDING' | 'RUNNING'; requestId?: string }>;
   query(taskId: string, expectedBase: string): Promise<{
