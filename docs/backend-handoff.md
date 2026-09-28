@@ -1,6 +1,8 @@
-# 后端交接与接口约定 v0.5
+# 后端交接与接口约定 v0.6
 
 这份文档描述**已经存在的接口**。服务端图片 worker、数据库、多用户登录、视频渲染属于待开发内容。接手前先运行 `npm test` 和 `npm run dev:mock`，阅读 `server.mjs`、`lib/studio.mjs`、`lib/images.mjs`。
+
+前端已迁到 React + TypeScript；首次运行 `npm ci`。请求封装在 `src/lib/api.ts`，数据类型在 `src/types.ts`，工作流在 `src/hooks/`。生产页面由 Node 提供 `dist/` 中的构建资源；开发页面为 Vite 5173，通过代理访问真实 3000 或模拟 3100。代理只适配本机开发页面的 Origin，后端现有同源门禁保持。接口变动需同步类型和组件，不再修改旧 public/app.js。
 
 ## 1. 边界与配置
 

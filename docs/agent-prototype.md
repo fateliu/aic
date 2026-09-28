@@ -1,6 +1,6 @@
 # 架构与版本范围
 
-v0.5 聚焦校园社团插画与四格故事，从设定整理到真实图片下载形成完整流程，支持红蓝角色主题、项目阶段导航、离线练习、用户上传角色参考与默认折叠提示词。文字与动画分镜保留为辅助能力；动画视频不属于本版已完成功能。
+v0.6 使用 React + TypeScript + Tailwind 构建创作工作台，聚焦校园社团插画与四格故事，从设定整理到真实图片下载形成完整流程，支持红蓝角色主题、项目阶段导航、离线练习、用户上传角色参考与默认折叠提示词。文字与动画分镜保留为辅助能力；动画视频不属于本版已完成功能。
 
 ```mermaid
 flowchart TD
@@ -20,7 +20,7 @@ flowchart TD
 
 | 模块 | 实现与职责 |
 | --- | --- |
-| 界面 | 原生 HTML / CSS / ES Modules；响应式创作台与 Canvas 合成 |
+| 界面 | React + TypeScript，Vite 构建，Tailwind 布局与定制视觉 CSS；Canvas 合成 |
 | API | Node.js 原生 HTTP；本机访问、版本检查、项目锁 |
 | 子 Agent / 主创 | `lib/studio.mjs`；DeepSeek 或 Ollama；规则模式用于无密钥演示 |
 | 文本提供方 | `lib/providers.mjs`；JSON 和工具消息适配 |

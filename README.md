@@ -16,7 +16,7 @@
 
 上图为本项目通过 DeepSeek + 百炼 `wan2.7-image` 实际生成的 1280 × 720 PNG，非界面占位图。见 [样例记录](docs/examples/README.md)。
 
-## v0.5 能做什么
+## v0.6 能做什么
 
 | 类型 | 可交付内容 |
 | --- | --- |
@@ -29,15 +29,20 @@
 
 新版界面支持“晴空 / 赤日”两套角色主题，记住配色选择，允许随机变换装饰构图。当前项目标题、版本、档案高亮和阶段导航帮助快速找到设定、创作稿与图片。样式参考与素材来源见 [视觉系统](docs/design-system.md)。
 
+前端已迁移为 **React + TypeScript + Vite + Tailwind CSS**，表单、项目状态、参考图与轮询由组件和 Hooks 管理。后端仍使用现有 Node HTTP API。在线转换工具调研、官方实例与迁移方式见 [React 迁移说明](docs/react-migration.md)。
+
 ## 本机启动
 
-需要 Node.js 22+，无需安装第三方依赖。Windows 可双击 `start.cmd`，或运行：
+需要 Node.js 22.12+（建议使用 Node 24）。首次克隆或依赖更新后先安装锁定依赖，Windows 也可双击 `start.cmd`：
 
 ```powershell
+npm ci
 npm start
 ```
 
 打开 [本机工作台](http://127.0.0.1:3000)。没有密钥也能选择“规则演示”试完整创作稿流程；规则演示不具备模型推理能力。
+
+`npm start` 会先检查 TypeScript、构建前端，再启动服务；之后打开 3000 即可。日常开发用 `npm run dev`，打开 `http://127.0.0.1:5173`，保存 TSX/CSS 会热更新；后端使用 3000。开发前先停止已运行的同端口服务。练习模式的热更新命令为 `npm run dev:mock:ui`（5173 → 3100），详细端口说明见 [开发指南](docs/development-guide.md)。
 
 队友无密钥练习、测试完整图片流程时可运行：
 
@@ -87,10 +92,11 @@ DeepSeek 负责文字与规划，百炼负责图片，两者独立配置、独�
 ## 验证与材料
 
 ```powershell
-npm test
+npm run check
+npm run test:ui
 ```
 
-自动测试不需要 API Key，也不产生模型费用。真实单图联调、模拟四格浏览器测试和未验证范围分别记录于 [测试报告](docs/test-report.md)，避免混用测试结论。
+`check` 包含后端测试、严格类型检查与生产构建。`test:ui` 使用本机 Chrome 执行 React 浏览器回归；CI 使用 Playwright Chromium。自动测试不需要 API Key，也不产生模型费用。真实单图联调、模拟四格浏览器测试和未验证范围分别记录于 [测试报告](docs/test-report.md)，避免混用测试结论。
 
 - [软件说明与故障处理](docs/software-description.md)
 - [架构与版本范围](docs/agent-prototype.md)

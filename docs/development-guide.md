@@ -1,134 +1,152 @@
 # 从零看懂并开发漫想工坊
 
-## 1. 这是什么项目
+## 1. 当前技术结构
 
-这是一个本机运行的 Web 应用。浏览器显示界面；Node.js 后端管理项目，调用文本/图像模型，把结果保存到硬盘。当前没有 React、Vue、数据库服务器或复杂构建工具，运行时也没有第三方 npm 依赖。
-
-先理解这一条链：
+v0.6 前端使用 React + TypeScript + Vite + Tailwind CSS。Node.js 后端负责项目持久化、提示词子 Agent、主创 Agent 和万相 API。前后端仍通过同一组 JSON 接口通信，没有数据库服务器。
 
 ```text
-页面按钮 → public/app.js 或 images.js → fetch('/api/...')
-  → server.mjs 校验、加锁、读取项目
-  → lib/studio.mjs 或 images.mjs 执行业务
-  → 模型服务 / 本机规则演示
-  → lib/store.mjs 保存 JSON，图片模块保存 PNG
-  → 浏览器更新当前项目
+React 组件 → useStudio / useImageJobs → src/lib/api.ts
+  → /api/... → server.mjs → lib/业务模块 → 模型或本机模拟
+  → 本地 JSON / 图片 → React 状态更新 → 页面
 ```
 
-主子 Agent 使用同一后端中的不同模型上下文；“子 Agent”不是另一个要单独安装的程序。Skill 是一份受限的创作指令 Markdown，也不是自动执行的插件。
+Agent 的职责与上下文在后端分离，子 Agent 不是单独安装的进程。Skill 是受限的创作指令 Markdown，不会自动执行第三方脚本。迁移过程和在线工具实例见 [React 迁移说明](react-migration.md)。
 
 ## 2. 第一次运行
 
-安装 Node.js 22+ 和 Git。克隆仓库，在仓库目录运行：
+安装 Node.js 22.12+（建议 24）、Git 和 Chrome。在自己的目录执行：
 
 ```powershell
 git clone https://github.com/fateliu/aic.git
 cd aic
-node --version
+npm ci
 npm run dev:mock
 ```
 
-打开 `http://127.0.0.1:3100`，用规则演示完成一次创作。练习服务不读取 `.env`，禁用真实文本提供方，图片使用仓库中的示例素材，不产生模型调用费用。练习数据写入 `data-mock/`。
+打开 http://127.0.0.1:3100。先完成一次无密钥练习：示例 → 检查提示词 → 主创 → 确认草稿 → 逐格生成 → 下载。模拟服务不读取 .env，不调用付费模型，所有图像使用同一张夹具。
 
-需要真实服务时，停止练习或另开终端运行 `npm start`，打开 3000 端口。复制 `.env.example` 为 `.env`，按 README 填密钥；已有 `.env` 不要覆盖。每个人使用自己的本机配置，密钥不要粘到群聊、GitHub 或截图中。
+真实服务运行 npm start，页面为 http://127.0.0.1:3000。复制 .env.example 为 .env 后在本机填密钥，已有配置不要覆盖。npm start 会先构建 React 页面。Windows 的 start.cmd 首次可自动运行 npm ci，然后启动。
 
-修改 HTML / CSS / 前端 JS 后刷新浏览器；修改服务端 `.mjs`、`.env` 后重启对应服务。修改 Skill 后新项目会读取新内容，旧项目仍保留原来的快照。按 `Ctrl+C` 停止终端中的服务。
+## 3. 开发模式与端口
 
-## 3. 文件夹地图
+| 用途 | 命令 | 打开的页面 |
+| --- | --- | --- |
+| 开发真实工作台，前端热更新 | npm run dev | http://127.0.0.1:5173 |
+| 开发练习工作台，前端热更新 | npm run dev:mock:ui | http://127.0.0.1:5173 |
+| 检查构建后的真实页面 | npm start | http://127.0.0.1:3000 |
+| 检查构建后的练习页面 | npm run dev:mock | http://127.0.0.1:3100 |
+
+dev 自动启动后端 3000；dev:mock:ui 自动启动后端 3100，再启动 Vite 5173。先停止自己已启动的同端口服务，避免冲突。Ctrl+C 结束开发脚本时会关闭它启动的两个子进程。真实与模拟模式不要同时占用 5173。
+
+TSX、CSS 保存后自动更新页面。后端 .mjs、.env 修改后重启命令；public/theme.json 修改后刷新读取配置。Skill 修改只影响新项目，旧项目保存快照。修改 package.json 后同步 package-lock.json；队友拉取依赖变动后运行 npm ci。
+
+## 4. 文件夹地图
 
 ```text
 aic/
-├─ public/                 浏览器能访问的页面、脚本、样式和图片
-│  └─ assets/              红蓝角色图片、可替换的背景素材
-├─ lib/                    服务端业务逻辑
-├─ creative-skills/        创作方法指令包及注册表
-├─ scripts/                开发辅助入口，例如无密钥练习服务
-├─ test/                   不计费的自动化测试
-├─ docs/                   产品、开发、分工、接口、比赛说明
-│  ├─ examples/            可公开的实际生成样例与精简记录
-│  └─ qa/                  队友可直接填写的测试、素材、反馈模板
-├─ .github/workflows/      GitHub 自动运行测试的配置
-├─ data/                   真实工作台的私有项目与图片（不提交）
-├─ data-mock/              练习项目与图片（不提交）
-├─ server.mjs              HTTP 服务入口
-├─ package.json            版本、Node 要求、启动/测试命令
-├─ start.cmd               Windows 双击启动入口
-├─ .env.example            配置模板，只有示例，没有真实密钥
-├─ .env                    个人密钥与配置（不提交）
-└─ .gitignore              排除本地配置、数据、日志等
+├─ src/                       React 前端源码（主要开发位置）
+│  ├─ components/             页面功能组件
+│  ├─ hooks/                  API 工作流、轮询、主题行为
+│  ├─ state/                  编辑状态与响应合并规则
+│  ├─ lib/                    请求、图片转换、漫画合成
+│  └─ styles/                 Tailwind 入口、独特视觉样式
+├─ public/                    静态素材与主题配置
+│  └─ assets/                 红蓝角色图、背景图片
+├─ lib/                       Node 服务端业务
+├─ creative-skills/           创作 Skill 与来源许可
+├─ scripts/                   开发启动和模拟服务
+├─ test/                      Node 后端自动测试、JPEG 夹具
+├─ tests/browser/             Playwright 浏览器与状态回归
+├─ docs/                      开发、接口、分工、测试和比赛说明
+├─ .github/workflows/         CI：安装、检查、构建、浏览器测试
+├─ dist/                      自动构建结果，不提交、不手改
+├─ data/、data-mock/          本机真实/模拟项目数据，不提交
+├─ index.html                 Vite 页面入口
+├─ vite.config.ts            React/Tailwind 插件、开发代理、输出目录
+├─ tsconfig.json              TypeScript 严格检查设置
+├─ playwright.config.ts       Chrome/CI Chromium 浏览器配置
+├─ server.mjs                 后端入口，提供 API 与 dist 静态页面
+├─ package.json               命令与依赖
+├─ package-lock.json          精确依赖版本，必须提交
+├─ start.cmd                  Windows 启动
+└─ .env.example / .env        模板 / 私有密钥配置
 ```
 
-`data/`、`data-mock/` 运行后才可能出现。仓库外的原组内讨论文稿是需求参考，不参与程序运行。开发者机器上的临时截图和 QA 工具不属于产品源码。
+不要直接修改 dist；下一次构建会覆盖它。不要把上传角色图、生成图和用户项目放进 src 或 public；产品的私有数据保存在 data 或 data-mock。
 
-## 4. 核心文件逐个说明
+## 5. 核心文件怎么分工
 
-| 文件 | 作用 | 通常什么时候修改 |
-| --- | --- | --- |
-| `server.mjs` | 路由、JSON 校验、单进程项目锁、静态资源、错误响应 | 增加 API、接入任务调度、改变部署方式 |
-| `lib/studio.mjs` | 新版 brief/提示词/草稿校验，主子 Agent 编排与规则演示，TXT 导出 | 调整创作类型、提示词、工具流程 |
-| `lib/providers.mjs` | DeepSeek / Ollama 文本协议，JSON 和工具消息适配 | 接新文本模型、修改供应商协议 |
-| `lib/images.mjs` | 百炼适配、单张提交去重、轮询、下载、恢复、角色参考 | 接新图片服务、排查生图问题 |
-| `lib/references.mjs` | 上传参考图的结构校验、去重、保存、同项目读取 | 改上传规范或素材存储 |
-| `lib/image-provider.d.ts` | 图片适配器的方法与返回值约定，供编辑器阅读 | 前后端协商扩展提供方能力 |
-| `lib/store.mjs` | 项目 JSON 的保存、读取、列表、原子替换 | 存储迁移、备份、数据读写问题 |
-| `lib/skills.mjs` | Skill 白名单、类型过滤、内容快照与 SHA256 | 扩展指令包加载规则 |
-| `lib/agent.mjs` | 旧版校园活动生成与 SVG 导出 | 修复旧项目兼容问题；新功能优先放 studio |
-| `public/index.html` | 页面结构、表单、结果区、主题按钮和角色展示 | 增加或调整界面区域 |
-| `public/style.css` | 红蓝变量、斜切构图、角色裁切、表单与手机适配 | 改视觉风格和响应式布局 |
-| `public/app.js` | 表单事件、项目状态、确认、历史、阶段跳转、背景 | 调整前端业务交互 |
-| `public/images.js` | 图片提交、状态轮询、预览、参考选择、Canvas 四格合成 | 改媒体操作与下载体验 |
-| `public/references.js` | 参考图解码压缩、上传、预览与来源选择 | 改角色参考交互 |
-| `public/appearance.js` | 红蓝配色、偏好保存、受控随机装饰、主视觉配置 | 调整主题行为，不涉及模型调用 |
-| `public/theme.json` | 默认主题、两张主视觉和背景配置 | 换图片或改默认配色，无需改业务逻辑 |
-| `public/assets/hero-sky.png` / `hero-flare.png` | 用户提供的角色皮肤图片 | 更换角色主视觉，登记来源 |
-| `creative-skills/registry.json` | 指令包 ID、类型、路径、来源、是否启用 | 注册新的 Skill |
-| 三个 `creative-skills/*/SKILL.md` | 漫画连续性、镜头设计、画面构图方法 | 调整创作指导内容 |
-| `creative-skills/SOURCES.md` / `comic-continuity/LICENSE` | 上游来源、扩展方法与许可 | 新增/更新来源与授权说明 |
-| `scripts/dev-mock.mjs` | 用本机图片夹具模拟完整流程，单独 3100 端口 | 队友无密钥开发和人工测试 |
-| `test/agent.test.mjs` | 旧版活动流程测试 | 改旧版流程时 |
-| `test/studio.test.mjs` | 主子 Agent、Skill、确认/版本与 HTTP 测试 | 改文本编排和新版状态时 |
-| `test/images.test.mjs` | 图片协议、去重、恢复、参考图、下载与锁 | 改图片服务时 |
-| `test/references.test.mjs` / `test/fixtures/reference.jpg` | 上传校验、文件隔离、图文请求、HTTP 门禁与纯色 JPEG 夹具 | 改上传和图片输入时 |
-| `.github/workflows/test.yml` | 在 Windows / Ubuntu 与 Node 22 / 24 上跑测试 | 改支持环境或 CI |
+| 文件 | 职责 |
+| --- | --- |
+| src/main.tsx | 挂载 React 根节点，加载样式，启用 StrictMode |
+| src/App.tsx | 总体页面组合，创作类型与引擎选择 |
+| src/components/Shell.tsx | 顶部、项目档案、主视觉、配色按钮、背景对话框 |
+| src/components/Composer.tsx | 原始想法表单、示例、引擎与 Skill 选择 |
+| src/components/ProjectEditor.tsx | 提示词折叠、分格编辑、人工确认、导出与执行记录 |
+| src/components/ImagePanel.tsx | 单张生成、费用确认、任务卡片、恢复和四格下载 |
+| src/components/ReferencePanel.tsx | 上传、预览和选择参考来源 |
+| src/hooks/useStudio.ts | 项目创建/读取、阶段调用、保存/确认、忙碌与错误状态 |
+| src/hooks/useImageJobs.ts | 自动查询、请求取消、失败暂停与手动恢复 |
+| src/hooks/useAppearance.ts | 主题记忆、随机装饰、临时背景与 Object URL 清理 |
+| src/state/project.ts | 保存状态与未保存编辑，拒绝其他项目/旧版本的轮询响应 |
+| src/lib/api.ts | 带类型的 fetch、错误文案、Blob/JSON 下载 |
+| src/lib/media.ts | 参考来源、JPEG 转换、Canvas 漫画合成 |
+| src/types.ts | Project、Refinement、Creative、ImageJob、Reference 等前端接口类型 |
+| src/styles/index.css | Tailwind 层与语义颜色入口 |
+| src/styles/visual.css | 红蓝色板、人物裁切、斜切构图、动效和断点 |
+| public/theme.json / assets | 可替换的默认主题配置与图片 |
+| server.mjs | 路由、JSON 限制、同源/本机检查、项目锁、构建资源服务 |
+| lib/studio.mjs | 新版输入校验、主子 Agent 编排、规则演示、TXT |
+| lib/providers.mjs | DeepSeek / Ollama 文本协议 |
+| lib/images.mjs / image-provider.d.ts | 万相适配、任务去重与恢复、提供方类型边界 |
+| lib/references.mjs | 上传结构检查、去重、存储与同项目素材读取 |
+| lib/store.mjs | 项目 JSON 原子保存、读取、列表 |
+| lib/skills.mjs | Skill 白名单、类型、指令快照与哈希 |
+| lib/agent.mjs | 旧版活动项目与 SVG 兼容 |
+| scripts/dev.mjs / dev-mock.mjs | 双进程热更新启动 / 不计费模拟后端 |
+| test/*.test.mjs | 后端协议、持久化、门禁、文件隔离、资源白名单 |
+| tests/browser/studio.spec.ts | 用户操作回归与编辑状态合并测试 |
 
-`.mjs` 是使用 ES Modules 的 JavaScript；`.d.ts` 是类型说明，当前不需要 TypeScript 编译步骤；`.md` 是 Markdown 文档；`.json` 是结构化配置/数据。
+.ts 是 TypeScript；.tsx 是带 JSX 的 React 组件；.mjs 是后端 ES Modules；.d.ts 是类型声明。Vite 负责浏览器构建，tsc 负责类型检查，两者都在 npm run build 中执行。
 
-## 5. 怎么开始改一项功能
+## 6. 如何改功能
 
-以“新增一个创作 Skill”为例：复制相近指令包目录，修改 Markdown，使用新 ID 注册到 registry，刷新页面，新建项目验证可选择且类型正确；检查项目 Skill 快照是否包含新内容。不要通过扩展指令包执行系统脚本。
+改界面：先找对应组件，用 props 传数据，用 onChange/onClick 改状态；不要在组件里重新写 querySelector(...).innerHTML、全局 onclick 或批量启用/禁用 DOM。焦点、dialog、Canvas 和浏览器下载可以通过 ref/浏览器 API 处理。
 
-以“接新图片模型”为例：先读后端接口文档，实现 ImageProvider 的 submit/query/download，再注入 createApp。维持图片任务状态、revision、confirmCost 和 replaces 语义。不要把供应商密钥直接交给浏览器。
+改样式：常规 flex/grid/gap/颜色/响应式用 Tailwind，独特角色构图继续写 visual.css。颜色优先用 text-studio-accent、bg-studio-paper 等语义工具类，以同时适配红蓝主题。不启用 Preflight 的原因和边框注意点见迁移文档。
 
-以“修改界面”为例：结构看 index.html，配色和断点看 style.css，纯主题状态看 appearance.js，业务按钮看 app.js / images.js。HTML 中现有 id 被脚本使用，改名时要同步所有引用。别只在桌面看效果；至少检查 390px 和 1440px。
+改业务：看 useStudio 和 state/project。已保存项目与正在编辑的表单分开；刷新图片只合并媒体字段。不要让轮询覆盖未保存文本。图片确认与版本由前后端共同约束，不能绕过 confirmCost。
 
-## 6. 提交代码和协作
+改接口：先更新 [后端契约](backend-handoff.md) 与 src/types.ts，再改两端。类型声明不能替代服务端输入校验。API Key 始终只留在后端，不能创建 VITE_API_KEY。
 
-每人先建立自己的分支：
+扩展 Skill：复制相近指令包、修改 Markdown、在 registry 注册新 ID、新建项目检查 Skill 快照，登记来源许可。不执行扩展包脚本。
+
+## 7. 测试与协作
+
+```powershell
+npm run check
+npm run test:ui
+```
+
+第一条包含 24 项后端测试、严格 TS 检查与构建。第二条在模拟 3100 上运行 Playwright；本机默认使用已安装的 Chrome，CI 安装 Chromium。浏览器测试启动前先构建（check 已完成构建），且会检查 simulation=true 才进行生成。它不能验证真实角色还原效果。
 
 ```powershell
 git pull --ff-only
 git switch -c feat/your-task-name
-npm test
-git status
-# 只添加本次修改的文件，例如：
-git add docs/qa/manual-checklist.md
-git commit -m "docs: record first manual test run"
+# 完成修改和上述检查后，仅添加本次文件
+git add src/components/ReferencePanel.tsx
+git commit -m "feat: improve reference interaction"
 git push -u origin feat/your-task-name
 ```
 
-到 GitHub 创建 Pull Request，说明“解决什么问题、实际做了什么、如何验证”。分支名应换成自己的任务名，后续更新使用 `git push`。默认由项目负责人检查后合并，避免三个人同时直接改 main。
+到 GitHub 建 PR，写清解决的问题、行为与验证。负责人主要改 src/、public/；后端同学改 lib/、server.mjs、test/；测试同学改 docs/qa/。提交前不应包含 .env、data、data-mock、dist、node_modules、未脱敏试用记录。
 
-同一时间尽量分开编辑：负责人以 public 为主，后端同学以 lib/server/test 为主，测试同学以 docs/qa 为主。需要双方修改接口时先在 PR 中写清请求与响应，再改代码。
+## 8. 常见问题
 
-提交前运行 `npm test`。样式修改还要看浏览器；模型协议修改先用模拟提供方验证，真实调用由负责人控制次数。提交列表中不应出现 `.env`、data、data-mock 或未脱敏的用户记录。
-
-## 7. 常见问题
-
-- **端口被占用**：先关掉自己启动的旧服务；真实入口可改 PORT 并重启，练习入口固定 3100。不要结束不认识的进程。
-- **只有文字，没有图片**：真实图片需要单独的百炼 Key；DeepSeek 只负责规划与文字。
-- **练习生成四张相同图片**：这是夹具行为，只测试流程，不测试画面效果。
-- **改完 CSS 看不到变化**：刷新或硬刷新；确认打开的是正确端口。
-- **修改后按钮不能点**：先保存修改，重新检查并确认当前版本，再执行后续动作。
-- **导出 JSON 后图片没一起带走**：JSON 不嵌入 PNG，备份要复制完整 data 目录。
-
-具体任务与验收见 [团队分工](team-plan.md)，接口请求体见 [后端交接](backend-handoff.md)。
+- 页面提示尚未构建：运行 npm run build，或使用包含构建步骤的 npm start。
+- 端口占用：停止自己认识的旧工作台，不结束其他项目进程。
+- 找不到 React/tsc：先 npm ci，检查 Node 版本不低于 22.12。
+- 修改组件看不到：5173 支持热更新；3000/3100 的生产页面需要重新 build 后刷新。
+- 练习图片都一样：夹具行为，测试操作不测试模型质量。
+- 保存后生成按钮不能点：重新检查并确认稿件与本次费用。
+- JSON 没有打包图片：备份整个 data，包括 images 与 references。

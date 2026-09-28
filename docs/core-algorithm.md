@@ -64,6 +64,6 @@ revision 是创作内容版本。编辑提示词使旧草稿与确认失效；�
 
 ## 6. 实现索引与依据
 
-主要实现：`lib/studio.mjs`、`lib/skills.mjs`、`lib/providers.mjs`、`lib/images.mjs`、`server.mjs`、`public/images.js`。测试使用依赖注入模拟提供方，并另有真实单图联调。
+主要实现：`lib/studio.mjs`、`lib/skills.mjs`、`lib/providers.mjs`、`lib/images.mjs`、`server.mjs`、`src/components/ImagePanel.tsx`、`src/hooks/useImageJobs.ts`。React 编辑状态在 `src/state/project.ts`，拒绝合并其他项目或旧版本的轮询响应。测试使用依赖注入模拟提供方，并另有真实单图联调。
 
 依据：[DeepSeek JSON](https://api-docs.deepseek.com/zh-cn/guides/json_mode/)、[Tool Calls](https://api-docs.deepseek.com/zh-cn/guides/tool_calls/)、[万相图像 API](https://help.aliyun.com/zh/model-studio/wan-image-generation-and-editing-api-reference)、[Skill 来源与授权](../creative-skills/SOURCES.md)。

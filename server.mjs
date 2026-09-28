@@ -22,7 +22,7 @@ async function jsonBody(req, limit = 98_304) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { throw fail('请求不是有效的 JSON'); }
 }
-export function createApp({ directory = process.env.DATA_DIR || join(root, 'data'), model = process.env.OLLAMA_MODEL, baseUrl = process.env.OLLAMA_BASE_URL, agent = runAgent, deepseekKey = process.env.DEEPSEEK_API_KEY, deepseekModel = process.env.DEEPSEEK_MODEL || DEFAULT_DEEPSEEK_MODEL, deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com', refiner = refinePrompt, studio = runStudio, imageProvider = createImageProvider({ apiKey: process.env.DASHSCOPE_API_KEY, baseUrl: process.env.DASHSCOPE_BASE_URL, model: process.env.DASHSCOPE_IMAGE_MODEL }) } = {}) {
+export function createApp({ frontendDirectory = join(root, 'dist'), directory = process.env.DATA_DIR || join(root, 'data'), model = process.env.OLLAMA_MODEL, baseUrl = process.env.OLLAMA_BASE_URL, agent = runAgent, deepseekKey = process.env.DEEPSEEK_API_KEY, deepseekModel = process.env.DEEPSEEK_MODEL || DEFAULT_DEEPSEEK_MODEL, deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com', refiner = refinePrompt, studio = runStudio, imageProvider = createImageProvider({ apiKey: process.env.DASHSCOPE_API_KEY, baseUrl: process.env.DASHSCOPE_BASE_URL, model: process.env.DASHSCOPE_IMAGE_MODEL }) } = {}) {
   const store = new Store(directory), locks = new Set();
   const providerOptions = mode => mode === 'deepseek' ? { mode, apiKey: deepseekKey, model: deepseekModel, baseUrl: deepseekBaseUrl } : { mode, model, baseUrl };
   return http.createServer(async (req, res) => {
@@ -158,15 +158,17 @@ return send({ brand: '漫想工坊', ollamaAvailable: Boolean(model), model: mod
         project.updatedAt = new Date().toISOString();
         return send(await store.save(project));
       }
-      const assets = { '/references.js': ['references.js', 'text/javascript; charset=utf-8'], '/': ['index.html', 'text/html; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'], '/appearance.js': ['appearance.js', 'text/javascript; charset=utf-8'], '/images.js': ['images.js', 'text/javascript; charset=utf-8'], '/style.css': ['style.css', 'text/css; charset=utf-8'] };
+      const builtAsset = url.pathname.match(/^\/build\/([a-zA-Z0-9_-]+\.(js|css))$/);
+      if (req.method === 'GET' && (url.pathname === '/' || builtAsset)) {
+        const path = builtAsset ? join(frontendDirectory, 'build', builtAsset[1]) : join(frontendDirectory, 'index.html');
+        const type = !builtAsset ? 'text/html; charset=utf-8' : builtAsset[2] === 'js' ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8';
+        try { return send(await readFile(path), 200, type); }
+        catch (error) { if (error.code === 'ENOENT') throw fail(builtAsset ? '前端资源不存在' : '前端尚未构建，请运行 npm run build 后刷新', builtAsset ? 404 : 503); throw error; }
+      }
       const imageAsset = url.pathname.match(/^\/assets\/([a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp|avif))$/);
       if (req.method === 'GET' && imageAsset) {
         try { return send(await readFile(join(root, 'public', 'assets', imageAsset[1])), 200, `image/${imageAsset[2] === 'jpg' ? 'jpeg' : imageAsset[2]}`); }
         catch (error) { if (error.code === 'ENOENT') throw fail('背景图片不存在', 404); throw error; }
-      }
-      if (req.method === 'GET' && assets[url.pathname]) {
-        const [file, type] = assets[url.pathname];
-        return send(await readFile(join(root, 'public', file)), 200, type);
       }
       throw fail('页面不存在', 404);
     } catch (error) { send({ error: error.status || error instanceof SyntaxError ? error.message : '操作失败：' + error.message }, error.status || 400); }

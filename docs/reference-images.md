@@ -65,10 +65,10 @@ name 最长 120 字符。旧 revision / 项目繁忙 409，错误格式或尺寸
 
 | 文件 | 职责 |
 | --- | --- |
-| `public/references.js` | 浏览器解码压缩、上传、预览、参考来源选择和费用重置 |
+| `src/components/ReferencePanel.tsx` / `src/lib/media.ts` | 浏览器解码压缩、上传、预览和参考来源选择 |
 | `lib/references.mjs` | 校验、去重、文件存储、按项目读取 |
 | `lib/images.mjs` | 选择一张参考图，记录来源，构造图文输入并提交 |
-| `public/app.js` / `index.html` / `style.css` | 提示词折叠、分格摘要、参考卡片布局 |
+| `src/components/ProjectEditor.tsx` / `ImagePanel.tsx` / `src/styles/` | 提示词折叠、分格摘要、参考布局与费用确认 |
 | `test/references.test.mjs` | 文件结构与大小、持久化、来源隔离、HTTP、模型输入与费用门禁 |
 | `test/fixtures/reference.jpg` | 自动测试专用的纯色 JPEG，不代表生成结果 |
 

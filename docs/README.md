@@ -1,10 +1,11 @@
 # 项目文档入口
 
-先跑起来，再按角色阅读。主工作台使用 `npm start` → `http://127.0.0.1:3000`；无密钥练习使用 `npm run dev:mock` → `http://127.0.0.1:3100`。
+先跑起来，再按角色阅读。首次执行 `npm ci`。主工作台使用 `npm start` → `http://127.0.0.1:3000`；无密钥练习使用 `npm run dev:mock` → `http://127.0.0.1:3100`。React 热更新开发使用 `npm run dev` 或 `npm run dev:mock:ui`，页面在 5173。
 
 | 你现在要做什么 | 从这里开始 |
 | --- | --- |
 | 看懂目录、文件，第一次参与开发 | [开发指南](development-guide.md) |
+| 了解 React/TS/Tailwind 迁移、在线转换网站与官方实例 | [React 迁移调研](react-migration.md) |
 | 知道三个人怎么分工 | [团队任务与验收](team-plan.md) |
 | 接手后端、替换模型或图片服务 | [后端交接与接口约定](backend-handoff.md) |
 | 不会写代码，先参与测试与演示 | [人工测试清单](qa/manual-checklist.md) |

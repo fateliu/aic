@@ -1,0 +1,17 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "./visual.css" layer(components);
+@import "tailwindcss/utilities.css" layer(utilities);
+@theme inline {
+  --color-studio-accent: var(--accent);
+  --color-studio-ink: var(--ink);
+  --color-studio-muted: var(--muted);
+  --color-studio-line: var(--line);
+  --color-studio-paper: var(--paper);
+  --color-studio-wash: var(--wash);
+}
+/* Keep existing typography and form defaults; deliberately omit Preflight. */
+@layer components {
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .reference-feedback:empty { display: none; }
+}
