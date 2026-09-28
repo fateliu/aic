@@ -38,7 +38,7 @@
 
 另启动 `npm run dev:mock:ui`，在 5173 上实际创建项目、上传参考图、生成草稿，确认开发代理正常；伪造外站 Origin 返回 403。临时修改 CSS 后观察样式热更新与输入保留，再恢复原文件。人工查看晴空/赤日主题及手机参考面板截图，修正新面板边框细节。该轮没有调用付费模型，也不代表已验证真实角色还原质量。
 
-本机运行 Playwright 使用已安装的 Chrome；CI 在 Ubuntu / Node 24 安装 Chromium。其余 Windows/Linux、Node 22/24 组合执行后端、类型和构建检查；本报告不代替远端 Actions 结果。
+本机运行 Playwright 使用已安装的 Chrome；CI 在 Ubuntu / Node 24 安装 Chromium。其余 Windows/Linux、Node 22/24 组合执行后端、类型和构建检查。迁移实现提交 `624bd6341eadb8ec18ded76ba116c219f5947912` 的四组远端检查已全部通过，其中 Ubuntu / Node 24 的浏览器回归也通过，见 [GitHub Actions 执行记录](https://github.com/fateliu/aic/actions/runs/36381550320)。此结论对应该提交，不代表后续提交自动通过。
 
 ## v0.4–v0.5 浏览器验证记录
 
@@ -78,7 +78,7 @@
 
 - 四张不同内容的真实漫画以及参考图对角色一致性的实际影响。
 - 大样本质量、对照试验与真实用户使用效果。
-- 远端 Linux / Node 22 CI 的本次执行结果、Safari / Firefox、真实手机设备。
+- Safari / Firefox、真实手机设备；当前浏览器自动验收仅覆盖 Chrome / Chromium。
 - 高并发、多用户、长时间运行；本版本定位单机单进程。
 - 视频生成、语音、字幕与动画成片：没有实现，不能列为通过。
 
